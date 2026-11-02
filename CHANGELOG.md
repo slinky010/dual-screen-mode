@@ -15,7 +15,7 @@
 - Increased the wizard's opening size and made long pages scroll inside a fixed footer so navigation stays visible.
 - Made the settings window scroll-safe and recorded launch context plus the last startup error in its log.
 - Replaced unsupported Tk alpha-color values so the Settings app starts correctly on standard SteamOS Python/Tk builds.
-- Added a GitHub-ready README, Moonlight client setup guide, contribution notes, CI tests, and a Reddit post draft.
+- Added a GitHub README, a short Moonlight pairing guide, and CI tests.
 - Added conservative startup cleanup, private runtime files, and process ownership checks for safer recovery.
 - Marked update checking as work in progress until a public release source exists.
 - Documented the exact audio, PipeWire, logging, and reconnect behavior.
@@ -45,6 +45,6 @@
 ## Current limits
 
 - Moonlight pairing still happens manually on the handheld.
-- Gyro setup through SteamDeckGyroDSU remains optional and separate.
+- Gyro and microphone forwarding are not included.
 - Microphone forwarding is not included.
 - The host must remain in KDE Desktop Mode while the virtual display is active.

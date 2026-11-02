@@ -103,19 +103,27 @@ complete the normal Sunshine pairing separately. See
 The virtual display remains active if Moonlight disconnects. That allows the
 handheld to reconnect without rebuilding the display.
 
-## Wii U and DS-style use
+## What I tested
 
-For Cemu, open `Options` and `Input settings`, choose `Wii U GamePad`, select
-`SDLController`, choose the Moonlight controller, and save the profile. Cemu's
-GamePad touch input is normally controlled by a left mouse click, so Moonlight
-mouse mode can be useful when a game needs touchscreen input.
+I built and tested this on a Steam Machine running SteamOS with a Steam Deck as
+the Moonlight client. The virtual display appeared as a second monitor and
+worked wirelessly over the local network.
 
-For Azahar or another 3DS emulator, configure the emulator's second-screen
-layout and controller profile separately. Dual Screen Mode only provides the
-display and the streamed input connection.
+For the controller test, I used Moonlight's gamepad mode on the Deck so its
+controls were sent to the host. I also used the setup alongside Cemu and
+Azahar. The display and streaming setup are separate from each emulator's own
+controller profile and input settings.
 
-Gyro and microphone forwarding are not included in this project. Optional
-motion-control tools such as SteamDeckGyroDSU remain a separate setup.
+I did not verify gyro or microphone forwarding, so this project does not claim
+to support them.
+
+## What is outside this project
+
+Dual Screen Mode only prepares the virtual display, Sunshine capture, streamed
+input connection, and optional session audio behavior. It does not configure
+Cemu, Azahar, another emulator, touch input, gyro, microphone forwarding, or
+game-specific controller profiles. Those are separate from the host display
+setup and need to be configured independently.
 
 ## Audio behavior
 
@@ -156,16 +164,11 @@ Moonlight, `krfb`, or user backups during uninstall.
 
 ## Uninstall
 
-Open **Uninstall Dual Screen Mode** from the desktop, then choose **Uninstall**
+Open **Dual Screen Mode Settings** from the desktop, then choose **Uninstall**
 inside the management app. It removes only files and settings owned by Dual
 Screen Mode.
 
-Sunshine, Moonlight, `krfb`, and user backups remain installed. The command-line
-fallback is available for development:
-
-```bash
-bash uninstall.sh
-```
+Sunshine, Moonlight, `krfb`, and user backups remain installed.
 
 ## Supported setup
 
@@ -182,29 +185,42 @@ The host must remain in KDE Desktop Mode while the virtual display is active.
 Switching a SteamOS host to Gaming Mode ends the desktop session that owns the
 virtual display.
 
-## Troubleshooting
+## Work in progress
+
+This is a one-person beta, and it has only been tested on my Steam Machine with
+a Steam Deck as the Moonlight client. Other KDE, graphics, Plasma, and
+handheld combinations may still have rough edges that I have not encountered.
+
+The current known limits are:
+
+- **Both** audio is still a work in progress and currently behaves like
+  **Handheld** audio.
+- Moonlight installation, pairing, and network discovery remain manual.
+- Emulator profiles, touch input, gyro, and microphone forwarding are outside
+  this project.
+
+If you try it and something breaks or behaves strangely, please open an issue
+on GitHub and include what host, handheld, desktop session, and display setup
+you were using. That will make it much easier to tell whether the problem is
+specific to one setup or something the project needs to handle.
+
+## If something goes wrong
 
 ### Moonlight cannot find or pair with the host
 
-Confirm that Sunshine is running on the host and that both devices are on the
-same local network. Moonlight and Sunshine pairing is handled through their
-normal pairing flow, not by Dual Screen Mode.
+Make sure Sunshine is running on the host, Moonlight has been paired with it,
+and both devices are on the same local network. Pairing is handled through the
+normal Sunshine and Moonlight flow, not by Dual Screen Mode.
 
 ### The handheld shows the main monitor instead of the second screen
 
 Turn Dual Screen Mode off and on again, then reconnect Moonlight. The host
 should show a virtual output named `Virtual-DualScreen`.
 
-### The stream is too small or hard to read
+### The stream is hard to read
 
-Open the management app and choose a display size that matches the handheld.
-Also check Moonlight's stream resolution and scaling settings.
-
-### A controller does not appear in an emulator
-
-Reconnect Moonlight, make sure gamepad mode is enabled, then revisit the
-emulator's input settings. Emulator profiles are separate from Dual Screen
-Mode.
+Open **Dual Screen Mode Settings** and choose a display size that matches the
+handheld. Moonlight's own stream settings are outside this project.
 
 ### The Settings app does not open
 
@@ -218,20 +234,12 @@ are replaced together. If it still fails, inspect:
 The Settings app's Help page can also open the Sunshine log and copy a small
 diagnostic summary.
 
-## Development
+## Source and tests
 
-The source is intentionally plain and inspectable. There is no remote shell
-script and no `curl | bash` install path.
-
-Run the local tests from the project directory:
-
-```bash
-bash tests/test-syntax.sh
-bash tests/test-toggle.sh
-bash tests/test-setup-execute.sh
-```
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for small changes and issue reports.
+The source is plain shell and Python and can be inspected directly. The tests
+in `tests/` are for checking the project during development and are not needed
+for a normal installation. There is no remote shell script and no `curl | bash`
+install path.
 
 ## Credits and license
 

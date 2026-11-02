@@ -341,7 +341,7 @@ class SettingsApp(tk.Tk):
         self.card(grid, "Start or stop the mode", "Double-click Dual Screen Mode on the desktop. A Moonlight disconnect does not turn the mode off, so you can reconnect without recreating the display.", 0, 0)
         self.card(grid, "Check Moonlight", "The handheld connects to Sunshine over the same local network. Moonlight is installed separately on the handheld.", 1, 0)
         self.card(grid, "If the picture is tiny", "Match the saved display size to the handheld and check Moonlight's stream resolution and scaling settings.", 0, 1)
-        self.card(grid, "If a game does not respond", "Moonlight sends the handheld's controls to the host. Emulator input profiles still need to be set up in Cemu, Azahar, or another emulator.", 1, 1)
+        self.card(grid, "If a game does not respond", "Moonlight sends the handheld's controls to the host. Game and emulator input setup is outside Dual Screen Mode.", 1, 1)
         self.card(grid, "What the mode changes", "It creates a KDE virtual display and changes Sunshine's capture and audio-stream settings. Handheld mode may mute the current default output for the session. It does not change the default output, install a driver, create a blank or virtual audio device, or alter other outputs. Saved audio values are restored when the mode turns off. Temporary startup logs are kept in the Dual Screen Mode runtime folder.", wide=True, row=2)
         actions = tk.Frame(page, bg=self.COLORS["paper"])
         actions.pack(fill="x", pady=(18, 0))
