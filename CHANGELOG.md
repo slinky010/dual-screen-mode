@@ -1,7 +1,12 @@
 # Changelog
 
-## 0.1.3 Beta
+## 0.1.4 Beta
 
+- Map Sunshine's virtual touchscreen to `Virtual-DualScreen` through KWin while
+  the mode is active, including devices that appear after Moonlight connects,
+  and restore the previous mapping when the mode turns off.
+
+## 0.1.3 Beta
 - Pause the graphical wizard when `krfb` is missing and use an explicit Konsole
   installation step with a Check again action instead of trying to track a
   privileged terminal in the background.

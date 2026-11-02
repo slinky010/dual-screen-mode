@@ -36,8 +36,9 @@ every client, so it sticks to the basic flow I used.
 
 Dual Screen Mode prepares the Linux PC that acts as the host. It gives you a
 simple on/off shortcut that creates and removes the virtual display, configures
-Sunshine for KDE's capture method, and applies the selected audio behavior for
-the session.
+Sunshine for KDE's capture method, routes Sunshine's virtual touchscreen to the
+virtual display when KWin exposes it, and applies the selected audio behavior
+for the session.
 
 ## What you need
 
@@ -101,6 +102,18 @@ When setup finishes, the wizard creates two desktop shortcuts:
 The virtual display remains active if Moonlight disconnects. That allows the
 handheld to reconnect without rebuilding the display.
 
+### Touch behavior
+
+When the mode is active, the toggle watches for Sunshine's virtual touchscreen
+and tells KWin to use `Virtual-DualScreen` for it. This is the part that keeps
+touch input on the handheld display instead of sending it to the host's main
+monitor. The previous KWin mapping is saved and restored when the mode turns
+off.
+
+This handles the host-side display routing. Touch behavior inside Cemu,
+Azahar, or another emulator still depends on that application's own input
+settings.
+
 ## What I tested
 
 I made this for my Steam Machine and Steam Deck. The virtual display showed up
@@ -119,11 +132,11 @@ and 3DS setups smoother.
 
 ## What is outside this project
 
-Dual Screen Mode only prepares the virtual display, Sunshine capture, streamed
-input connection, and optional session audio behavior. It does not configure
-Cemu, Azahar, another emulator, touch input, gyro, microphone forwarding, or
-game-specific controller profiles. Those are separate from the host display
-setup and need to be configured independently.
+Dual Screen Mode prepares the virtual display, Sunshine capture, Sunshine's
+virtual touchscreen routing, streamed input connection, and optional session
+audio behavior. It does not configure Cemu, Azahar, another emulator,
+game-specific controller profiles, gyro, or microphone forwarding. Those are
+separate from the host display setup and need to be configured independently.
 
 ## Audio behavior
 
@@ -158,6 +171,9 @@ The setup can:
 - Save the selected display size and audio preference.
 - Generate a fresh temporary virtual-display password for each session without
   saving it as a user credential.
+- Watch for Sunshine's virtual touchscreen and map it to `Virtual-DualScreen`
+  through KWin while the mode is active, restoring the previous mapping when it
+  turns off.
 - Create a user-local on/off toggle, management app, desktop shortcuts, and
   icons.
 
@@ -199,8 +215,9 @@ The current known limits are:
 
 - **Both** audio is still a work in progress and currently behaves like
   **Handheld** audio.
-- Emulator profiles, touch input, gyro, and microphone forwarding are outside
-  this project.
+- Touch routing depends on Sunshine exposing its virtual touchscreen and KWin
+  exposing the input-device mapping. Emulator-specific touch behavior, gyro,
+  and microphone forwarding are outside this project.
 
 If you try it and something breaks or behaves strangely, please open an issue
 on GitHub and include what host, handheld, desktop session, and display setup
@@ -220,6 +237,14 @@ normal Sunshine and Moonlight flow, not by Dual Screen Mode.
 
 Turn Dual Screen Mode off and on again, then reconnect Moonlight. The host
 should show a virtual output named `Virtual-DualScreen`.
+
+### Touch lands on the wrong monitor
+
+Turn Dual Screen Mode off and on again, then reconnect Moonlight. While the
+mode is active, its status page should show touch routing as mapped or waiting
+for Sunshine's virtual touchscreen. If Sunshine does not expose a virtual
+touchscreen, Moonlight's trackpad or mouse controls may still work, but there
+is no host touch device for Dual Screen Mode to route.
 
 ### The stream is hard to read
 

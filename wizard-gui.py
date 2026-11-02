@@ -284,13 +284,13 @@ class DualScreenWizard(tk.Tk):
 
     def build_permissions(self):
         page = self.new_page()
-        self.heading(page, "Step 2 · Setup and permissions", "What will change?", "The setup adds the virtual display support, configures Sunshine for KDE capture, and creates the shortcuts you will use later.")
+        self.heading(page, "Step 2 · Setup and permissions", "What will change?", "The setup adds the virtual display support, configures Sunshine for KDE capture, and routes Sunshine's virtual touchscreen to that display when it appears.")
         grid = tk.Frame(page, bg=self.COLORS["paper"])
         grid.pack(fill="x", pady=(22, 8))
         for col in range(2):
             grid.grid_columnconfigure(col, weight=1)
         self.card(grid, "Virtual second screen", "Add the KDE component if needed", symbol="＋", column=0, row=0)
-        self.card(grid, "Sunshine capture", "Point it at KDE’s virtual output", symbol="↗", column=1, row=0)
+        self.card(grid, "Sunshine capture", "Use KDE’s virtual output and touch routing", symbol="↗", column=1, row=0)
         self.card(grid, "One user-level permission", "Allows KWin capture for Sunshine", symbol="⌁", column=0, row=1)
         self.card(grid, "Settings app", "Manage settings, updates, and uninstall", column=1, row=1)
         self.make_label(page, "The setup keeps things simple. Your existing streaming tools remain available for regular use, and Dual Screen Mode has its own settings app for changes or removal.", size=10, color=self.COLORS["soft"], wrap=680).pack(anchor="w", pady=(25, 0))
@@ -355,7 +355,7 @@ class DualScreenWizard(tk.Tk):
         self.progress_detail = tk.Label(page, textvariable=self.progress_detail_var, bg=self.COLORS["paper"], fg=self.COLORS["soft"], font=("TkDefaultFont", 10), anchor="w")
         self.progress_detail.pack(anchor="w", pady=(18, 8))
         self.progress_rows = []
-        items = [("Check the host environment", "KDE Plasma and Wayland"), ("Prepare the virtual display", "krfb-virtualmonitor"), ("Prepare Sunshine", "Official host streaming app"), ("Apply KDE capture permission", "User-level setting"), ("Create the shortcuts", "Dual Screen Mode and Dual Screen Mode Settings")]
+        items = [("Check the host environment", "KDE Plasma and Wayland"), ("Prepare the virtual display", "krfb-virtualmonitor"), ("Prepare Sunshine", "Capture, touch routing, and audio"), ("Apply KDE capture permission", "User-level setting"), ("Create the shortcuts", "Dual Screen Mode and Dual Screen Mode Settings")]
         for index, (title, sub) in enumerate(items):
             row = tk.Frame(page, bg=self.COLORS["paper2"], highlightbackground=self.COLORS["line"], highlightthickness=1)
             row.pack(fill="x", pady=5)

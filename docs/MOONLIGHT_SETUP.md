@@ -23,6 +23,11 @@ are on the same local network.
 4. Use Moonlight's gamepad mode when you want handheld controls sent to the
    host.
 
+When the mode is active, Dual Screen Mode also maps Sunshine's virtual
+touchscreen to the virtual display through KWin when Sunshine exposes it. If
+touch lands on the host monitor, turn the mode off and on again, then reconnect
+Moonlight.
+
 Double-click **Dual Screen Mode** again when finished. The virtual display is
 removed and temporary audio state is restored. A Moonlight disconnect does not
 turn the mode off, so the handheld can reconnect without rebuilding the

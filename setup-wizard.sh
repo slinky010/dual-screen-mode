@@ -295,6 +295,7 @@ Changes it may make:
   - Install Sunshine from the official Flathub app ID: dev.lizardbyte.app.Sunshine.
   - Add a user-level KWin screencast permission setting.
   - Update Sunshine's local capture/output settings.
+  - Install a toggle that maps Sunshine's virtual touchscreen to the virtual display through KWin while the mode is active, then restores the previous mapping when it is turned off.
   - Save a selected display size and audio preference in a user config file.
   - Audio is explicit: Host sets Sunshine audio streaming off and leaves host outputs alone. Handheld sets it on and mutes the current default output. Both is work in progress and currently uses the Handheld behavior. Before this, Dual Screen Mode saves Sunshine's current audio-stream setting and, when available, the current default output's volume and mute state. Those saved values are restored when the mode turns off.
   - Create a user-local on/off launcher and management app plus matching launcher icons.
@@ -404,7 +405,7 @@ permissions_step() {
     fi
 
     ui_question \
-        "Setup and permissions\n\nDual Screen Mode may install KDE's krfb virtual-display component and Sunshine if they are missing. It also adds a user-level KWin setting so Sunshine can capture the virtual display.\n\nThere is no background service or telemetry. Sunshine, Moonlight, krfb, and your backups stay under your control.\n\nContinue?" ||
+        "Setup and permissions\n\nDual Screen Mode may install KDE's krfb virtual-display component and Sunshine if they are missing. It also adds a user-level KWin setting so Sunshine can capture the virtual display. When the mode is active, its toggle maps Sunshine's virtual touchscreen to that display when KWin exposes it.\n\nThere is no background service or telemetry. Sunshine, Moonlight, krfb, and your backups stay under your control.\n\nContinue?" ||
         exit 0
     PERMISSIONS_APPROVED=1
 }

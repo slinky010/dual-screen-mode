@@ -36,6 +36,26 @@ trap 'rm -f "$FAKE_STATE/vmon"; exit 0' TERM INT EXIT
 while :; do sleep 1; done
 EOF
 
+cat > "$fake_bin/qdbus6" <<'EOF'
+#!/usr/bin/env bash
+case "${3:-}" in
+    org.kde.KWin.InputDeviceManager.ListTouch)
+        [[ -f "$FAKE_STATE/touch-device" ]] && printf '%s\n' event28
+        ;;
+    org.freedesktop.DBus.Properties.Get)
+        case "${5:-}" in
+            name) printf '%s\n' 'libvirtualhid Touchscreen' ;;
+            outputName) cat "$FAKE_STATE/touch-output" 2>/dev/null || true ;;
+        esac
+        ;;
+    org.freedesktop.DBus.Properties.Set)
+        if [[ "${5:-}" == outputName ]]; then
+            printf '%s\n' "${6:-}" > "$FAKE_STATE/touch-output"
+        fi
+        ;;
+esac
+EOF
+
 cat > "$fake_bin/flatpak" <<'EOF'
 #!/usr/bin/env bash
 case "${1:-}" in
@@ -69,6 +89,7 @@ chmod +x "$fake_bin"/*
 mkdir -p "$test_home/.config/dual-screen-mode" "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine"
 printf '%s\n' 'resolution=1280x800' 'audio_mode=host' > "$test_home/.config/dual-screen-mode/settings.conf"
 printf '%s\n' 'stream_audio = enabled' > "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf"
+printf '%s\n' 'DP-1' > "$fake_state/touch-output"
 
 run_toggle() {
     HOME="$test_home" \
@@ -84,9 +105,16 @@ grep -Fq 'stream_audio = disabled' "$test_home/.var/app/dev.lizardbyte.app.Sunsh
 grep -Fq -- '--password' "$fake_state/vmon-args" || { echo 'FAIL virtual monitor password was not supplied'; exit 1; }
 vmon_password="$(awk 'previous == "--password" { print; exit } { previous = $0 }' "$fake_state/vmon-args")"
 [[ "$vmon_password" =~ ^[[:alnum:]]{8}$ ]] || { echo 'FAIL virtual monitor password was not eight random alphanumeric characters'; exit 1; }
+touch "$fake_state/touch-device"
+for _ in {1..30}; do
+    grep -Fxq 'Virtual-DualScreen' "$fake_state/touch-output" && break
+    sleep 0.1
+done
+grep -Fxq 'Virtual-DualScreen' "$fake_state/touch-output" || { echo 'FAIL Sunshine virtual touchscreen was not mapped to the virtual display'; exit 1; }
 run_toggle
 [[ ! -f "$runtime_dir/dual-screen-mode/active" ]] || { echo 'FAIL host mode did not deactivate'; exit 1; }
 grep -Fq 'stream_audio = enabled' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf" || { echo 'FAIL stream audio was not restored'; exit 1; }
+grep -Fxq 'DP-1' "$fake_state/touch-output" || { echo 'FAIL touch output mapping was not restored'; exit 1; }
 
 printf '%s\n' 'resolution=1280x800' 'audio_mode=handheld' > "$test_home/.config/dual-screen-mode/settings.conf"
 run_toggle

@@ -16,6 +16,9 @@ STATE_FILE="$RUNTIME_DIR/active"
 VMON_PID_FILE="$RUNTIME_DIR/vmonitor.pid"
 SUNSHINE_PID_FILE="$RUNTIME_DIR/sunshine.pid"
 AUDIO_STATE_FILE="$RUNTIME_DIR/audio.state"
+TOUCH_MAPPING_FILE="$RUNTIME_DIR/touch-mappings"
+TOUCH_STATUS_FILE="$RUNTIME_DIR/touch-status"
+TOUCH_WATCHER_PID_FILE="$RUNTIME_DIR/touch-watcher.pid"
 
 # Prevent rapid double-clicks from starting duplicate processes.
 notify_user() {
@@ -80,6 +83,161 @@ wait_for_sunshine() {
         sleep 0.5
     done
     return 1
+}
+
+kwin_dbus() {
+    local dbus_tool
+    if command -v qdbus6 >/dev/null 2>&1; then
+        dbus_tool="qdbus6"
+    elif command -v qdbus >/dev/null 2>&1; then
+        dbus_tool="qdbus"
+    else
+        return 127
+    fi
+    "$dbus_tool" "$@"
+}
+
+kwin_get_input_property() {
+    local device="$1"
+    local property="$2"
+    kwin_dbus \
+        org.kde.KWin \
+        "/org/kde/KWin/InputDevice/$device" \
+        org.freedesktop.DBus.Properties.Get \
+        org.kde.KWin.InputDevice \
+        "$property" 2>/dev/null || true
+}
+
+kwin_set_input_property() {
+    local device="$1"
+    local property="$2"
+    local value="$3"
+    kwin_dbus \
+        org.kde.KWin \
+        "/org/kde/KWin/InputDevice/$device" \
+        org.freedesktop.DBus.Properties.Set \
+        org.kde.KWin.InputDevice \
+        "$property" \
+        "$value" >/dev/null 2>&1
+}
+
+set_touch_status() {
+    local value="$1"
+    local temporary="$TOUCH_STATUS_FILE.tmp"
+    printf '%s\n' "$value" > "$temporary" && mv -f "$temporary" "$TOUCH_STATUS_FILE"
+}
+
+touch_device_matches_sunshine() {
+    local name="${1,,}"
+    [[ "$name" == *libvirtualhid* && "$name" == *touch* ]] && return 0
+    [[ "$name" == *touch\ passthrough* ]] && return 0
+    [[ "$name" == *sunshine* && "$name" == *touch* ]] && return 0
+    return 1
+}
+
+touch_mapping_saved_for() {
+    local device="$1"
+    [[ -f "$TOUCH_MAPPING_FILE" ]] || return 1
+    awk -F '\t' -v wanted="$device" '$1 == wanted { found = 1 } END { exit !found }' \
+        "$TOUCH_MAPPING_FILE"
+}
+
+map_sunshine_touch_devices() {
+    local target="Virtual-${VIRTUAL_NAME}"
+    local devices
+    devices="$(kwin_dbus \
+        org.kde.KWin \
+        /org/kde/KWin/InputDevice \
+        org.kde.KWin.InputDeviceManager.ListTouch 2>/dev/null)" || {
+        set_touch_status unavailable
+        return 2
+    }
+
+    local found=0
+    local failed=0
+    local device name old_output
+    while IFS= read -r device; do
+        [[ -n "$device" ]] || continue
+        name="$(kwin_get_input_property "$device" name)"
+        if ! touch_device_matches_sunshine "$name"; then
+            continue
+        fi
+
+        found=1
+        old_output="$(kwin_get_input_property "$device" outputName)"
+        if [[ "$old_output" == "$target" ]]; then
+            continue
+        fi
+
+        if ! touch_mapping_saved_for "$device"; then
+            printf '%s\t%s\n' "$device" "$old_output" >> "$TOUCH_MAPPING_FILE"
+        fi
+        if ! kwin_set_input_property "$device" outputName "$target"; then
+            failed=1
+            continue
+        fi
+    done <<< "$devices"
+
+    if (( failed )); then
+        set_touch_status warning
+        return 3
+    fi
+    if (( found )); then
+        set_touch_status mapped
+        return 0
+    fi
+
+    set_touch_status waiting
+    return 1
+}
+
+touch_watcher_pid_is_ours() {
+    local pid="$1"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [[ -r "/proc/$pid/cmdline" && -O "/proc/$pid" ]] || return 1
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
+        grep -Fq "dual-screen-mode"
+}
+
+start_touch_watcher() {
+    command -v qdbus6 >/dev/null 2>&1 ||
+        command -v qdbus >/dev/null 2>&1 || {
+        set_touch_status unavailable
+        return 0
+    }
+
+    (
+        while [[ -f "$STATE_FILE" ]]; do
+            map_sunshine_touch_devices >/dev/null 2>&1 || true
+            sleep 1
+        done
+    ) >"$RUNTIME_DIR/touch-watcher.log" 2>&1 &
+    echo "$!" > "$TOUCH_WATCHER_PID_FILE"
+}
+
+stop_touch_watcher() {
+    if [[ -f "$TOUCH_WATCHER_PID_FILE" ]]; then
+        local pid
+        pid="$(cat "$TOUCH_WATCHER_PID_FILE" 2>/dev/null || true)"
+        if touch_watcher_pid_is_ours "$pid"; then
+            kill "$pid" 2>/dev/null || true
+        fi
+        rm -f "$TOUCH_WATCHER_PID_FILE"
+    fi
+}
+
+restore_touch_mappings() {
+    [[ -f "$TOUCH_MAPPING_FILE" ]] || {
+        rm -f "$TOUCH_STATUS_FILE"
+        return 0
+    }
+
+    local device old_output
+    while IFS=$'\t' read -r device old_output; do
+        [[ -n "$device" ]] || continue
+        kwin_set_input_property "$device" outputName "$old_output" || true
+    done < "$TOUCH_MAPPING_FILE"
+    rm -f "$TOUCH_MAPPING_FILE" "$TOUCH_STATUS_FILE"
 }
 
 vmonitor_pid_is_ours() {
@@ -204,6 +362,11 @@ stop_virtual_monitor() {
 }
 
 turn_off() {
+    # Restore KWin's input mapping before Sunshine exits and removes its
+    # virtual touchscreen device.
+    stop_touch_watcher
+    restore_touch_mappings
+
     if [[ -f "$SUNSHINE_PID_FILE" ]]; then
         flatpak kill "$SUNSHINE_APP" 2>/dev/null || true
         rm -f "$SUNSHINE_PID_FILE"
@@ -222,6 +385,7 @@ if [[ -f "$STATE_FILE" ]]; then
 fi
 
 # Clear stale bookkeeping but do not touch unrelated processes.
+restore_touch_mappings
 rm -f "$VMON_PID_FILE" "$SUNSHINE_PID_FILE"
 
 if ! command -v krfb-virtualmonitor >/dev/null 2>&1; then
@@ -238,6 +402,8 @@ fi
 startup_cleanup_needed=1
 startup_cleanup() {
     if (( startup_cleanup_needed )); then
+        stop_touch_watcher
+        restore_touch_mappings
         restore_audio_state
         stop_virtual_monitor
         if [[ -f "$SUNSHINE_PID_FILE" ]]; then
@@ -304,7 +470,13 @@ if ! sunshine_running; then
     fi
 fi
 
+map_sunshine_touch_devices >/dev/null 2>&1 || true
 touch "$STATE_FILE"
+start_touch_watcher
 startup_cleanup_needed=0
 trap - INT TERM
-notify_user "Dual Screen Mode ready. Connect your handheld."
+if [[ "$(cat "$TOUCH_STATUS_FILE" 2>/dev/null || true)" == "unavailable" ]]; then
+    notify_user "Dual Screen Mode ready. KWin's touch-mapping tool was not found, so touch may need manual setup."
+else
+    notify_user "Dual Screen Mode ready. Connect your handheld. Touch routing will follow Sunshine's virtual touchscreen."
+fi

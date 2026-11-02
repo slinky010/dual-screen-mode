@@ -10,7 +10,7 @@ from tkinter import messagebox, ttk
 os.umask(0o077)
 
 
-APP_VERSION = "0.1.3-beta"
+APP_VERSION = "0.1.4-beta"
 VIRTUAL_NAME = "DualScreen"
 SUNSHINE_APP = "dev.lizardbyte.app.Sunshine"
 SETTINGS_FILE = Path.home() / ".config" / "dual-screen-mode" / "settings.conf"
@@ -265,7 +265,8 @@ class SettingsApp(tk.Tk):
         grid.grid_columnconfigure(1, weight=1)
         self.status_cards["display"] = self.card(grid, "Virtual display", "", 0, 0)
         self.status_cards["audio"] = self.card(grid, "Audio", "", 1, 0)
-        self.status_cards["sunshine"] = self.card(grid, "Sunshine", "", 0, 1, wide=True)
+        self.status_cards["touch"] = self.card(grid, "Touch routing", "", 0, 1)
+        self.status_cards["sunshine"] = self.card(grid, "Sunshine", "", 1, 1)
         self.status_refresh = tk.Button(page, text="Refresh status", command=self.refresh_status, bg=self.COLORS["card2"], fg=self.COLORS["ink"], activebackground="#24445d", relief="flat", bd=0, padx=13, pady=8, font=("TkDefaultFont", 8, "bold"), cursor="hand2")
         self.status_refresh.pack(anchor="e", pady=(18, 0))
 
@@ -344,7 +345,8 @@ class SettingsApp(tk.Tk):
         self.card(grid, "Check Moonlight", "The handheld connects to Sunshine over the same local network. Moonlight is installed separately on the handheld.", 1, 0)
         self.card(grid, "If the picture is tiny", "Match the saved display size to the handheld and check Moonlight's stream resolution and scaling settings.", 0, 1)
         self.card(grid, "If a game does not respond", "Moonlight sends the handheld's controls to the host. Game and emulator input setup is outside Dual Screen Mode.", 1, 1)
-        self.card(grid, "What the mode changes", "It creates a KDE virtual display and changes Sunshine's capture and audio-stream settings. Handheld mode may mute the current default output for the session. It does not change the default output, install a driver, create a blank or virtual audio device, or alter other outputs. Saved audio values are restored when the mode turns off. Temporary startup logs are kept in the Dual Screen Mode runtime folder.", wide=True, row=2)
+        self.card(grid, "If touch hits the wrong screen", "Turn Dual Screen Mode off and on again. The toggle maps Sunshine's virtual touchscreen to Virtual-DualScreen when it appears.", 0, 2)
+        self.card(grid, "What the mode changes", "It creates a KDE virtual display, maps Sunshine's virtual touchscreen to that display when KWin exposes it, and changes Sunshine's capture and audio-stream settings. Handheld mode may mute the current default output for the session. It does not change the default output, install a driver, create a blank or virtual audio device, or alter other outputs. Saved audio values are restored when the mode turns off. Temporary startup logs are kept in the Dual Screen Mode runtime folder.", wide=True, row=3)
         actions = tk.Frame(page, bg=self.COLORS["paper"])
         actions.pack(fill="x", pady=(18, 0))
         tk.Button(actions, text="Open Sunshine log", command=self.open_sunshine_log, bg=self.COLORS["card2"], fg=self.COLORS["ink"], activebackground="#24445d", relief="flat", bd=0, padx=13, pady=8, font=("TkDefaultFont", 8, "bold"), cursor="hand2").pack(side="left", padx=(0, 8))
@@ -375,6 +377,7 @@ class SettingsApp(tk.Tk):
                 f"Virtual display: {'active' if active else 'off'}",
                 f"Saved resolution: {self.settings.get('resolution', '1280x800')}",
                 f"Audio mode: {self.settings.get('audio_mode', 'host')}",
+                f"Touch routing: {self.touch_status()}",
                 f"Sunshine: {self.sunshine_status()}",
                 f"Sunshine log: {self.sunshine_log_path}",
                 f"Settings: {SETTINGS_FILE}",
@@ -393,7 +396,7 @@ class SettingsApp(tk.Tk):
         grid.grid_columnconfigure(0, weight=1)
         self.card(grid, "What this project does", "Dual Screen Mode brings together the pieces needed to create a virtual display, stream it over your local network, and use a handheld alongside the host computer.", wide=True)
         self.card(grid, "How it came together", "This project collects existing tools, guides, and configuration steps into one repeatable setup that is easier to install and share.", wide=True, row=1)
-        self.card(grid, "Built with", "KDE Plasma and krfb virtual display\nSunshine for host streaming\nMoonlight for the handheld connection", wide=True, row=2)
+        self.card(grid, "Built with", "KDE Plasma and krfb virtual display\nKWin input routing for Sunshine's virtual touchscreen\nSunshine for host streaming\nMoonlight for the handheld connection", wide=True, row=2)
         self.card(grid, "Credits and license", "Made by slinky. Dual Screen Mode is released under the MIT License and credits the tools and community guides that make the setup possible.", wide=True, row=3)
 
     def build_uninstall(self):
@@ -448,6 +451,7 @@ class SettingsApp(tk.Tk):
         sunshine = self.sunshine_status()
         self.set_card_detail("display", display)
         self.set_card_detail("audio", audio)
+        self.set_card_detail("touch", self.touch_status())
         self.set_card_detail("sunshine", sunshine)
 
     @staticmethod
@@ -475,6 +479,21 @@ class SettingsApp(tk.Tk):
         except (OSError, subprocess.SubprocessError):
             pass
         return "Not installed"
+
+    @staticmethod
+    def touch_status():
+        if not (RUNTIME_DIR / "active").exists():
+            return "Off until the mode starts"
+        try:
+            status = (RUNTIME_DIR / "touch-status").read_text(encoding="utf-8").strip()
+        except OSError:
+            status = ""
+        return {
+            "mapped": "Mapped to Virtual-DualScreen",
+            "waiting": "Waiting for Sunshine's virtual touchscreen",
+            "unavailable": "KWin D-Bus tool not found",
+            "warning": "Could not map the virtual touchscreen",
+        }.get(status, "Waiting for Sunshine's virtual touchscreen")
 
     def set_card_detail(self, key, detail):
         frame = self.status_cards.get(key)

@@ -17,6 +17,7 @@ ENV_FILE="$HOME/.config/environment.d/dual-screen-mode.conf"
 SETTINGS_FILE="$HOME/.config/dual-screen-mode/settings.conf"
 SETTINGS_DIR="$HOME/.config/dual-screen-mode"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/dual-screen-mode"
+TOUCH_MAPPING_FILE="$RUNTIME_DIR/touch-mappings"
 STATE_DIR="$HOME/.local/state/dual-screen-mode"
 VIRTUAL_NAME="DualScreen"
 OWNED_ENV_MARKER="$STATE_DIR/owned-environment-setting"
@@ -74,12 +75,38 @@ stop_vmonitor_pid() {
     fi
 }
 
+restore_touch_mappings() {
+    [[ -f "$TOUCH_MAPPING_FILE" ]] || return 0
+
+    local dbus_tool=""
+    if have qdbus6; then
+        dbus_tool="qdbus6"
+    elif have qdbus; then
+        dbus_tool="qdbus"
+    fi
+    if [[ -n "$dbus_tool" ]]; then
+        local device old_output
+        while IFS=$'\t' read -r device old_output; do
+            [[ -n "$device" ]] || continue
+            "$dbus_tool" \
+                org.kde.KWin \
+                "/org/kde/KWin/InputDevice/$device" \
+                org.freedesktop.DBus.Properties.Set \
+                org.kde.KWin.InputDevice \
+                outputName \
+                "$old_output" >/dev/null 2>&1 || true
+        done < "$TOUCH_MAPPING_FILE"
+    fi
+    rm -f "$TOUCH_MAPPING_FILE" "$RUNTIME_DIR/touch-status" "$RUNTIME_DIR/touch-watcher.pid"
+}
+
 stop_mode() {
     if [[ -f "$RUNTIME_DIR/active" && -x "$TOGGLE_DEST" ]]; then
         "$TOGGLE_DEST" >/dev/null 2>&1 || true
         return 0
     fi
 
+    restore_touch_mappings
     if [[ -f "$RUNTIME_DIR/sunshine.pid" ]]; then
         flatpak kill "$APP_ID" 2>/dev/null || true
     fi

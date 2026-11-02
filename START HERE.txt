@@ -1,5 +1,5 @@
 DUAL SCREEN MODE
-Beta release 0.1.3
+Beta release 0.1.4
 
 START HERE
 
@@ -11,7 +11,8 @@ That is the only file you need to launch for a normal installation.
 
 After setup, two shortcuts are created on the Desktop:
 
-- Dual Screen Mode turns the virtual display on or off.
+- Dual Screen Mode turns the virtual display on or off and routes Sunshine's
+  virtual touchscreen to it when available.
 - Dual Screen Mode Settings shows status, settings, help, updates, and uninstall.
 
 Moonlight is installed separately on the handheld. Pair Moonlight with
