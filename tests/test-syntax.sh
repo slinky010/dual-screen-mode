@@ -45,10 +45,11 @@ fi
 for file in \
     "$root_dir/Install Dual Screen Mode.desktop" \
     "$root_dir/START HERE.txt" \
+    "$root_dir/README.md" \
+    "$root_dir/docs/MOONLIGHT_SETUP.md" \
     "$root_dir/settings-gui.py" \
     "$root_dir/assets/dual-screen-mode.png" \
-    "$root_dir/assets/dual-screen-mode-settings.png" \
-    "$root_dir/wizard-preview.html"; do
+    "$root_dir/assets/dual-screen-mode-settings.png"; do
     if [[ -e "$file" ]]; then
         printf 'PASS %s\n' "${file#$root_dir/}"
     else
@@ -57,8 +58,7 @@ for file in \
     fi
 done
 
-if grep -Fq 'Install Dual Screen Mode' "$root_dir/wizard-preview.html" &&
-    grep -Fq 'Run connection test' "$root_dir/wizard-preview.html" &&
+if grep -Fq 'Install Dual Screen Mode' "$root_dir/README.md" &&
     grep -Fq 'Install Dual Screen Mode.desktop' "$root_dir/START HERE.txt"; then
     printf 'PASS preview content\n'
 else

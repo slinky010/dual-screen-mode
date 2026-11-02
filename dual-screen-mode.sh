@@ -4,6 +4,9 @@ set -u
 umask 077
 
 VIRTUAL_NAME="${DUAL_SCREEN_VIRTUAL_NAME:-DualScreen}"
+if [[ ! "$VIRTUAL_NAME" =~ ^[[:alnum:]_-]{1,32}$ ]]; then
+    VIRTUAL_NAME="DualScreen"
+fi
 SUNSHINE_APP="dev.lizardbyte.app.Sunshine"
 SUNSHINE_CONF="$HOME/.var/app/$SUNSHINE_APP/config/sunshine/sunshine.conf"
 SETTINGS_FILE="$HOME/.config/dual-screen-mode/settings.conf"
@@ -14,20 +17,21 @@ VMON_PID_FILE="$RUNTIME_DIR/vmonitor.pid"
 SUNSHINE_PID_FILE="$RUNTIME_DIR/sunshine.pid"
 AUDIO_STATE_FILE="$RUNTIME_DIR/audio.state"
 
-mkdir -p "$RUNTIME_DIR"
-chmod 700 "$RUNTIME_DIR" 2>/dev/null || true
-
 # Prevent rapid double-clicks from starting duplicate processes.
-if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-    exit 0
-fi
-trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
-
 notify_user() {
     if command -v notify-send >/dev/null 2>&1; then
         notify-send "Dual Screen Mode" "$1" 2>/dev/null || true
     fi
 }
+
+if ! mkdir -p "$RUNTIME_DIR" || ! chmod 700 "$RUNTIME_DIR" || [[ ! -O "$RUNTIME_DIR" ]]; then
+    notify_user "Dual Screen Mode could not create a private runtime folder. Nothing was started."
+    exit 1
+fi
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    exit 0
+fi
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
 
 read_setting() {
     local key="$1"
@@ -82,10 +86,11 @@ vmonitor_pid_is_ours() {
     local pid="$1"
     [[ "$pid" =~ ^[0-9]+$ ]] || return 1
     [[ -r "/proc/$pid/cmdline" ]] || return 1
+    [[ -O "/proc/$pid" ]] || return 1
     tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
         grep -Fq "krfb-virtualmonitor" || return 1
     tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
-        grep -Fq -- "--name $VIRTUAL_NAME"
+        grep -Eq -- "(^|[[:space:]])--name[[:space:]]+$VIRTUAL_NAME([[:space:]]|$)"
 }
 
 get_config_line() {
@@ -189,8 +194,12 @@ stop_virtual_monitor() {
         rm -f "$VMON_PID_FILE"
     else
         # Fallback handles a monitor started manually before the toggle was installed.
-        pkill -CONT -f "krfb-virtualmonitor.*${VIRTUAL_NAME}" 2>/dev/null || true
-        pkill -f "krfb-virtualmonitor.*${VIRTUAL_NAME}" 2>/dev/null || true
+        while IFS= read -r pid; do
+            if vmonitor_pid_is_ours "$pid"; then
+                kill -CONT "$pid" 2>/dev/null || true
+                kill "$pid" 2>/dev/null || true
+            fi
+        done < <(pgrep -u "$(id -u)" -f '(^|/)krfb-virtualmonitor([[:space:]]|$)' 2>/dev/null || true)
     fi
 }
 
@@ -244,10 +253,21 @@ apply_audio_mode
 
 # Start the virtual display if it is not already present.
 if ! virtual_display_exists; then
+    if ! command -v base64 >/dev/null 2>&1; then
+        restore_audio_state
+        notify_user "A secure temporary display password could not be generated. Nothing was started."
+        exit 1
+    fi
+    VMON_PASSWORD="$(head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 8)"
+    if [[ ! "$VMON_PASSWORD" =~ ^[[:alnum:]]{8}$ ]]; then
+        restore_audio_state
+        notify_user "A secure temporary display password could not be generated. Nothing was started."
+        exit 1
+    fi
     nohup krfb-virtualmonitor \
         --name "$VIRTUAL_NAME" \
         --resolution "$VIRTUAL_RESOLUTION" \
-        --password dualscreen \
+        --password "$VMON_PASSWORD" \
         --port 5900 \
         >"$RUNTIME_DIR/vmonitor.log" 2>&1 &
 

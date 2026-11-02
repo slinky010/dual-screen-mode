@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -u
+umask 077
 
 APP_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 APP_SCRIPT="$APP_DIR/settings-gui.py"

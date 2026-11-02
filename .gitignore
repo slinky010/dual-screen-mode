@@ -8,7 +8,6 @@ upload/
 
 # Build outputs and old local archives belong in releases, not the source tree.
 dist/*
-!dist/.gitkeep
 
 # Draft artwork kept outside the published asset set.
 assets/dual-screen-mode-original.png

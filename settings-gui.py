@@ -7,6 +7,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox, ttk
 
+os.umask(0o077)
+
 
 APP_VERSION = "0.1.3-beta"
 VIRTUAL_NAME = "DualScreen"

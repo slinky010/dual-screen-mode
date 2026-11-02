@@ -19,6 +19,9 @@
 - Added conservative startup cleanup, private runtime files, and process ownership checks for safer recovery.
 - Marked update checking as work in progress until a public release source exists.
 - Documented the exact audio, PipeWire, logging, and reconnect behavior.
+- Generate a fresh temporary virtual-display password for each session and
+  keep runtime state in a private user directory.
+- Keep the test suite independent of local-only preview files.
 - Marked the Both audio choice as work in progress and made its current
   behavior match Handheld audio consistently.
 

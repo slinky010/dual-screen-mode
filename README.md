@@ -8,7 +8,7 @@
 
 Made by slinky.
 
-Setting up a wireless display on Linux was not simple for me. 
+Setting up a wireless display on Linux was not simple for me.
 In my head, the ideal version was always a simple on/off switch: turn it on
 when I want the Wii U or DS-style setup, turn it off when I am done, and get
 back to playing without opening Konsole every time. Dual Screen Mode
@@ -156,6 +156,8 @@ The setup can:
 - Add a user-level KWin screencast setting required by this capture method.
 - Configure Sunshine to use KWin capture and `Virtual-DualScreen`.
 - Save the selected display size and audio preference.
+- Generate a fresh temporary virtual-display password for each session without
+  saving it as a user credential.
 - Create a user-local on/off toggle, management app, desktop shortcuts, and
   icons.
 

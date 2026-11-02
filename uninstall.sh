@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -u
+umask 077
 
 APP_ID="dev.lizardbyte.app.Sunshine"
 TOGGLE_DEST="$HOME/.local/bin/dual-screen-mode"
@@ -17,6 +18,7 @@ SETTINGS_FILE="$HOME/.config/dual-screen-mode/settings.conf"
 SETTINGS_DIR="$HOME/.config/dual-screen-mode"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/dual-screen-mode"
 STATE_DIR="$HOME/.local/state/dual-screen-mode"
+VIRTUAL_NAME="DualScreen"
 OWNED_ENV_MARKER="$STATE_DIR/owned-environment-setting"
 OWNED_OVERRIDE_MARKER="$STATE_DIR/owned-sunshine-override"
 OWNED_SETTINGS_ICON_MARKER="$STATE_DIR/owned-settings-icon"
@@ -54,6 +56,24 @@ ui_question() {
     [[ "$answer" =~ ^[Yy]([Ee][Ss])?$ ]]
 }
 
+vmonitor_pid_is_ours() {
+    local pid="$1"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [[ -r "/proc/$pid/cmdline" && -O "/proc/$pid" ]] || return 1
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
+        grep -Fq "krfb-virtualmonitor" || return 1
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
+        grep -Eq -- "(^|[[:space:]])--name[[:space:]]+$VIRTUAL_NAME([[:space:]]|$)"
+}
+
+stop_vmonitor_pid() {
+    local pid="$1"
+    if vmonitor_pid_is_ours "$pid"; then
+        kill -CONT "$pid" 2>/dev/null || true
+        kill "$pid" 2>/dev/null || true
+    fi
+}
+
 stop_mode() {
     if [[ -f "$RUNTIME_DIR/active" && -x "$TOGGLE_DEST" ]]; then
         "$TOGGLE_DEST" >/dev/null 2>&1 || true
@@ -66,11 +86,11 @@ stop_mode() {
     if [[ -f "$RUNTIME_DIR/vmonitor.pid" ]]; then
         local pid
         pid="$(cat "$RUNTIME_DIR/vmonitor.pid" 2>/dev/null || true)"
-        kill -CONT "$pid" 2>/dev/null || true
-        kill "$pid" 2>/dev/null || true
+        stop_vmonitor_pid "$pid"
     else
-        pkill -CONT -f 'krfb-virtualmonitor.*DualScreen' 2>/dev/null || true
-        pkill -f 'krfb-virtualmonitor.*DualScreen' 2>/dev/null || true
+        while IFS= read -r pid; do
+            stop_vmonitor_pid "$pid"
+        done < <(pgrep -u "$(id -u)" -f '(^|/)krfb-virtualmonitor([[:space:]]|$)' 2>/dev/null || true)
     fi
     rm -f "$RUNTIME_DIR/active" "$RUNTIME_DIR/vmonitor.pid" "$RUNTIME_DIR/sunshine.pid" "$RUNTIME_DIR/audio.state"
 }

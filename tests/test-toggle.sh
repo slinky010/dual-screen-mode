@@ -30,6 +30,7 @@ EOF
 
 cat > "$fake_bin/krfb-virtualmonitor" <<'EOF'
 #!/usr/bin/env bash
+printf '%s\n' "$@" > "$FAKE_STATE/vmon-args"
 touch "$FAKE_STATE/vmon"
 trap 'rm -f "$FAKE_STATE/vmon"; exit 0' TERM INT EXIT
 while :; do sleep 1; done
@@ -80,6 +81,9 @@ run_toggle() {
 run_toggle
 [[ -f "$runtime_dir/dual-screen-mode/active" ]] || { echo 'FAIL host mode did not activate'; exit 1; }
 grep -Fq 'stream_audio = disabled' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf" || { echo 'FAIL host mode did not disable stream audio'; exit 1; }
+grep -Fq -- '--password' "$fake_state/vmon-args" || { echo 'FAIL virtual monitor password was not supplied'; exit 1; }
+vmon_password="$(awk 'previous == "--password" { print; exit } { previous = $0 }' "$fake_state/vmon-args")"
+[[ "$vmon_password" =~ ^[[:alnum:]]{8}$ ]] || { echo 'FAIL virtual monitor password was not eight random alphanumeric characters'; exit 1; }
 run_toggle
 [[ ! -f "$runtime_dir/dual-screen-mode/active" ]] || { echo 'FAIL host mode did not deactivate'; exit 1; }
 grep -Fq 'stream_audio = enabled' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf" || { echo 'FAIL stream audio was not restored'; exit 1; }
