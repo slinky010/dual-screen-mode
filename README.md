@@ -78,17 +78,108 @@ installed.
 
 ## Install
 
-1. Download and extract the project archive.
-2. Double-click `Install Dual Screen Mode.desktop`.
-3. Press **Begin setup** in the wizard.
-4. Review the host checks, display size, and audio choice.
-5. Let the wizard finish.
+The short version is:
 
-When setup finishes, the wizard creates two desktop shortcuts:
+1. Download the latest release from GitHub and extract it somewhere easy to find, such as your Desktop.
+2. Open the extracted folder and double-click `Install Dual Screen Mode.desktop`.
+3. Choose **Launch** if KDE asks what to do with the file. Do not choose **Open with Kate**.
+4. Click **Begin setup** and follow the wizard.
+5. If the KDE virtual-display package is missing, approve its installation in Konsole, close Konsole when it finishes, and click **Check again**.
+6. Continue through the wizard and let it create the two desktop shortcuts.
+
+### Visual setup guide
+
+<details>
+<summary>Open the step-by-step guide</summary>
+
+You do not need to know how to use GitHub or the Linux terminal to follow this guide. The screenshots show what to click and explain what should happen next.
+
+#### 1. Open the latest release
+
+On the Dual Screen Mode GitHub page, click **Releases** on the right side.
+
+![Open the Releases section](docs/guide/1.jpg)
+
+#### 2. Download the package
+
+Open the newest release and expand **Assets**.
+
+Download the `.tar.gz` package. It is a compressed package, similar to a `.zip` file. Do not choose the individual source files or the **Source code** downloads.
+
+![Open the latest release assets](docs/guide/2.jpg)
+
+#### 3. Extract the package
+
+Open the downloaded `.tar.gz` file with Ark, KDE's archive utility, and click **Extract**.
+
+Choose an easy-to-find location, such as your Desktop. You do not need to extract the files one at a time.
+
+![Extract the package](docs/guide/3.jpg)
+
+#### 4. Open the installer
+
+Open the extracted Dual Screen Mode folder and double-click **Install Dual Screen Mode.desktop**.
+
+![Open the installer file](docs/guide/4.jpg)
+
+When KDE asks what you want to do with the file, choose **Launch**. Do not choose **Open with Kate**. Kate is a text editor, so that would only show the file contents instead of starting the installer.
+
+![Choose Launch](docs/guide/5.jpg)
+
+#### 5. Start the setup wizard
+
+The welcome screen explains what Dual Screen Mode will set up. When you are ready, click **Begin setup**.
+
+![Start the setup wizard](docs/guide/6.jpg)
+
+The wizard checks the host computer for the pieces it needs and handles the setup for you. It will explain anything that is missing before continuing.
+
+#### 6. Install the KDE virtual-display package if needed
+
+If the KDE virtual-display package is missing, the wizard will tell you what to do. Click **Open installation terminal**.
+
+![System check](docs/guide/7.jpg)
+
+Konsole will open and ask for your normal system password. The password is entered in Konsole, not into Dual Screen Mode.
+
+![Enter your password in Konsole](docs/guide/8.jpg)
+
+Approve the package installation and wait for it to finish.
+
+![Approve the package installation](docs/guide/9.jpg)
+
+When the installation is complete, close Konsole and return to the wizard. Click **Check again**.
+
+![Return to the wizard and check again](docs/guide/10.jpg)
+
+The wizard will confirm that the required pieces are ready. Once the check passes, **Continue** becomes available.
+
+#### 7. Finish the setup
+
+Click **Continue** and let the wizard finish setting everything up.
+
+When setup is complete, two shortcuts will be created on your Desktop:
 
 - **Dual Screen Mode** turns the virtual display on or off.
-- **Dual Screen Mode Settings** opens the management app for status, settings,
-  updates, help, about, and uninstall.
+- **Dual Screen Mode Settings** opens the management app for status, settings, updates, help, about, and uninstall.
+
+![The two desktop shortcuts](docs/guide/11.jpg)
+
+#### 8. Turn on Dual Screen Mode
+
+Double-click **Dual Screen Mode** on your Desktop.
+
+This turns on the virtual display and prepares Sunshine for the connection. You do not need to open Sunshine manually.
+
+![Dual Screen Mode is ready](docs/guide/12.jpg)
+
+Open Moonlight on your handheld and connect to the host. Moonlight must already be installed and paired separately.
+
+#### 9. Uninstall if you change your mind
+
+Open **Dual Screen Mode Settings** from the Desktop and choose **Uninstall**. The settings app removes Dual Screen Mode and its own changes without removing Sunshine, Moonlight, or `krfb`.
+
+</details>
 
 ## Normal use
 
