@@ -90,6 +90,44 @@ When setup finishes, the wizard creates two desktop shortcuts:
 - **Dual Screen Mode Settings** opens the management app for status, settings,
   updates, help, about, and uninstall.
 
+## Visual guide
+
+The normal workflow is intentionally short:
+
+```text
+Install Dual Screen Mode
+          │
+          ▼
+Choose display size and audio behavior
+          │
+          ▼
+Dual Screen Mode shortcut  →  virtual display on
+          │
+          ▼
+Connect Moonlight on the handheld
+          │
+          ▼
+Dual Screen Mode shortcut  →  virtual display off
+```
+
+### After installation
+
+The installer creates two shortcuts on the host:
+
+- **Dual Screen Mode** is the quick on/off switch.
+- **Dual Screen Mode Settings** is where you can review status, change the display and audio settings, open help, check updates, or uninstall.
+
+![Dual Screen Mode Settings app](assets/dual-screen-mode-settings.png)
+
+### Each time you use it
+
+1. Double-click **Dual Screen Mode** on the host and wait for the virtual display to start.
+2. Open Moonlight on the handheld and connect to the paired host.
+3. Start the stream. Enable Moonlight's gamepad mode when you want the handheld controls sent to the host.
+4. When you are finished, double-click **Dual Screen Mode** again.
+
+The virtual display stays active if Moonlight disconnects, so you can reconnect without rebuilding the display. If touch is available through Sunshine, Dual Screen Mode maps it to `Virtual-DualScreen` while the mode is active.
+
 ## Normal use
 
 1. Double-click **Dual Screen Mode** on the host.
