@@ -8,32 +8,37 @@
 
 Made by slinky.
 
-Dual Screen Mode packages an existing KDE, Sunshine, and Moonlight setup into
-one repeatable install. The goal is simple: make a handheld work like a Wii U
-GamePad, a DS or 3DS bottom screen, or another useful two-screen display
-without asking people to piece together scattered guides and terminal commands.
+Setting up a wireless display on Linux was not simple for me. Dual Screen Mode
+packages an existing KDE, Sunshine, and Moonlight setup into one repeatable
+install. The goal is simple: make a Steam Deck or other Linux handheld work
+like a Wii U GamePad, a DS or 3DS bottom screen, or just a useful wireless
+display without asking people to piece together scattered guides, Reddit posts,
+and terminal commands.
 
-This is an early beta. The first target is SteamOS with KDE Plasma on Wayland.
+In my head, the ideal version was always a simple on/off switch: turn it on
+when I want the Wii U or DS-style setup, turn it off when I am done, and get
+back to playing without opening Konsole every time.
 
-## Important: what this project handles
+This is an early beta I made for SteamOS with KDE Plasma on Wayland.
 
-Dual Screen Mode prepares the Linux PC that acts as the host. It creates and
-removes the virtual display, configures Sunshine for KDE's capture method, and
-gives you a simple on/off shortcut.
+## Before you start
 
-The handheld side is still manual:
+Dual Screen Mode handles the Linux host. Moonlight is a separate app for the
+handheld. On a Steam Deck, it can be installed through Discover. On another
+client, use the normal app source for that device.
 
-- Install Moonlight separately on the Steam Deck, handheld, tablet, or phone.
-- Pair Moonlight with Sunshine using Sunshine and Moonlight's normal pairing
-  flow.
-- Choose the host in Moonlight and enter the pairing PIN when prompted.
+Pair Moonlight with Sunshine through their normal pairing flow before using the
+mode. The wizard can install Sunshine on the host if it is missing, but it does
+not install or pair Moonlight on the handheld. A short client setup guide is in
+[`docs/MOONLIGHT_SETUP.md`](docs/MOONLIGHT_SETUP.md). I am not an expert in
+every client, so it sticks to the basic flow I used.
 
-The project does not configure the network, firewall rules, or automatic
-pairing. A short client setup guide is in
-[`docs/MOONLIGHT_SETUP.md`](docs/MOONLIGHT_SETUP.md).
+## What this project handles
 
-Sunshine can be installed by the wizard if it is missing. The wizard does not
-install Moonlight on the handheld.
+Dual Screen Mode prepares the Linux PC that acts as the host. It gives you a
+simple on/off shortcut that creates and removes the virtual display, configures
+Sunshine for KDE's capture method, and applies the selected audio behavior for
+the session.
 
 ## What you need
 
@@ -66,12 +71,10 @@ installed.
 
 ### Handheld or client
 
-- Moonlight installed separately
+- A Steam Deck, another PC handheld, tablet, or phone with Moonlight
 - A screen resolution that matches one of the available virtual display sizes
 - Gamepad support enabled in Moonlight when you want the handheld controls sent
   to the host
-
-The client can be a Steam Deck, another PC handheld, a tablet, or a phone.
 
 ## Install
 
@@ -87,17 +90,13 @@ When setup finishes, the wizard creates two desktop shortcuts:
 - **Dual Screen Mode Settings** opens the management app for status, settings,
   updates, help, about, and uninstall.
 
-The installer does not pair Moonlight. Install Moonlight on the handheld and
-complete the normal Sunshine pairing separately. See
-[`docs/MOONLIGHT_SETUP.md`](docs/MOONLIGHT_SETUP.md).
-
 ## Normal use
 
 1. Double-click **Dual Screen Mode** on the host.
 2. Wait for the virtual display to be ready.
-3. Open Moonlight on the handheld and connect to the already-paired host.
-4. Start a Sunshine stream and use Moonlight's gamepad mode when you want the
-   handheld controls sent to the host.
+3. Open Moonlight on the handheld and connect to the paired host.
+4. Start the stream. Use Moonlight's gamepad mode when you want the handheld
+   controls sent to the host.
 5. Double-click **Dual Screen Mode** again when you are finished.
 
 The virtual display remains active if Moonlight disconnects. That allows the
@@ -105,17 +104,19 @@ handheld to reconnect without rebuilding the display.
 
 ## What I tested
 
-I built and tested this on a Steam Machine running SteamOS with a Steam Deck as
-the Moonlight client. The virtual display appeared as a second monitor and
-worked wirelessly over the local network.
+I made this for my Steam Machine and Steam Deck. The virtual display showed up
+as a second monitor and worked wirelessly over the local network pretty
+seamlessly.
 
-For the controller test, I used Moonlight's gamepad mode on the Deck so its
-controls were sent to the host. I also used the setup alongside Cemu and
-Azahar. The display and streaming setup are separate from each emulator's own
-controller profile and input settings.
+For controls, I used Moonlight's gamepad mode on the Deck so its controls were
+sent to the host. In Cemu, I had to set up some input manually, although some
+of that was probably me still learning Cemu. In Azahar, I used its automap
+function. The display and streaming setup are separate from each emulator's
+own controller profile and input settings.
 
 I did not verify gyro or microphone forwarding, so this project does not claim
-to support them.
+to support them yet. I would like to look into that in the future to make Wii U
+and 3DS setups smoother.
 
 ## What is outside this project
 
@@ -132,9 +133,10 @@ The wizard makes the audio choice explicit:
 - **Host:** Sunshine audio streaming is disabled. Host audio is left alone.
 - **Handheld:** Sunshine audio streaming is enabled. The current default host
   output is muted for the session.
-- **Both (work in progress):** This currently uses Handheld behavior. Sunshine
-  audio streaming is enabled and the current default host output is muted for
-  the session.
+- **Both (work in progress):** This is intended for audio on both the host and
+  handheld. I have not verified that behavior reliably yet, so it currently
+  uses Handheld behavior: Sunshine audio streaming is enabled and the current
+  default host output is muted for the session.
 
 Before a temporary change, the toggle saves Sunshine's current audio-stream
 setting and, when available, the current default output's volume and mute state.
@@ -187,22 +189,23 @@ virtual display.
 
 ## Work in progress
 
-This is a one-person beta, and it has only been tested on my Steam Machine with
-a Steam Deck as the Moonlight client. Other KDE, graphics, Plasma, and
-handheld combinations may still have rough edges that I have not encountered.
+This is a one-person beta. I was making it for myself, but thought it would be
+fun to share. I only have my own Steam Machine and Steam Deck to test with, so
+other KDE, graphics, Plasma, and handheld combinations may still have rough
+edges that I have not encountered.
 
 The current known limits are:
 
 - **Both** audio is still a work in progress and currently behaves like
   **Handheld** audio.
-- Moonlight installation, pairing, and network discovery remain manual.
 - Emulator profiles, touch input, gyro, and microphone forwarding are outside
   this project.
 
 If you try it and something breaks or behaves strangely, please open an issue
 on GitHub and include what host, handheld, desktop session, and display setup
 you were using. That will make it much easier to tell whether the problem is
-specific to one setup or something the project needs to handle.
+specific to one setup or something the project needs to handle. This is my
+first project like this, so please have patience with it.
 
 ## If something goes wrong
 
