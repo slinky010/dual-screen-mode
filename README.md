@@ -8,16 +8,15 @@
 
 Made by slinky.
 
-Setting up a wireless display on Linux was not simple for me. Dual Screen Mode
+Setting up a wireless display on Linux was not simple for me. 
+In my head, the ideal version was always a simple on/off switch: turn it on
+when I want the Wii U or DS-style setup, turn it off when I am done, and get
+back to playing without opening Konsole every time. Dual Screen Mode
 packages an existing KDE, Sunshine, and Moonlight setup into one repeatable
 install. The goal is simple: make a Steam Deck or other Linux handheld work
 like a Wii U GamePad, a DS or 3DS bottom screen, or just a useful wireless
 display without asking people to piece together scattered guides, Reddit posts,
 and terminal commands.
-
-In my head, the ideal version was always a simple on/off switch: turn it on
-when I want the Wii U or DS-style setup, turn it off when I am done, and get
-back to playing without opening Konsole every time.
 
 This is an early beta I made for SteamOS with KDE Plasma on Wayland.
 
