@@ -39,15 +39,19 @@ install Moonlight on the handheld.
 
 ### Host PC
 
+This is the computer that runs the games and sends the virtual display to the
+handheld. It needs:
+
 - SteamOS or another Arch-based Linux installation
 - KDE Plasma running on Wayland
 - A working Flatpak installation
 - A graphics device supported by Sunshine's encoder
 - The host and handheld connected to the same local network
 
-The installer can guide you through installing KDE's `krfb` package through
-`pacman` and Sunshine from the official Flathub app ID
-`dev.lizardbyte.app.Sunshine`.
+The wizard checks the host before it changes anything. It can guide you through
+installing KDE's `krfb` package through `pacman`, and it can install Sunshine
+from the official Flathub app ID `dev.lizardbyte.app.Sunshine` if Sunshine is
+not already present.
 
 If `krfb` is missing, the wizard pauses and opens a visible Konsole window for
 the package installation. Enter the normal administrator password in Konsole,
@@ -77,11 +81,11 @@ The client can be a Steam Deck, another PC handheld, a tablet, or a phone.
 4. Review the host checks, display size, and audio choice.
 5. Let the wizard finish.
 
-The wizard creates two desktop shortcuts:
+When setup finishes, the wizard creates two desktop shortcuts:
 
 - **Dual Screen Mode** turns the virtual display on or off.
-- **Uninstall Dual Screen Mode** opens the management app. Despite its legacy
-  filename, it opens Status, Settings, Updates, Help, About, and Uninstall.
+- **Dual Screen Mode Settings** opens the management app for status, settings,
+  updates, help, about, and uninstall.
 
 The installer does not pair Moonlight. Install Moonlight on the handheld and
 complete the normal Sunshine pairing separately. See
@@ -120,8 +124,9 @@ The wizard makes the audio choice explicit:
 - **Host:** Sunshine audio streaming is disabled. Host audio is left alone.
 - **Handheld:** Sunshine audio streaming is enabled. The current default host
   output is muted for the session.
-- **Both:** Sunshine audio streaming is enabled. The current default host
-  output keeps playing.
+- **Both (work in progress):** This currently uses Handheld behavior. Sunshine
+  audio streaming is enabled and the current default host output is muted for
+  the session.
 
 Before a temporary change, the toggle saves Sunshine's current audio-stream
 setting and, when available, the current default output's volume and mute state.
@@ -226,9 +231,6 @@ bash tests/test-toggle.sh
 bash tests/test-setup-execute.sh
 ```
 
-The HTML preview is a dependency-free design reference. It does not change the
-host or install anything.
-
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for small changes and issue reports.
 
 ## Credits and license
@@ -237,4 +239,4 @@ Dual Screen Mode is a packaging and configuration layer around existing tools
 and community knowledge. It does not replace or claim ownership of Sunshine,
 Moonlight, KDE, `krfb`, or the guides that informed the setup.
 
-See [`ACKNOWLEDGMENTS.md`](`ACKNOWLEDGMENTS.md`) and [`LICENSE`](`LICENSE`).
+See [`ACKNOWLEDGMENTS.md`](ACKNOWLEDGMENTS.md) and [`LICENSE`](LICENSE).

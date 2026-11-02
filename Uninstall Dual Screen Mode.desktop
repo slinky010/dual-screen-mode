@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Dual Screen Mode Settings
+Comment=View status, change settings, update, or uninstall Dual Screen Mode
+Exec=sh -c "cd -- \"$(dirname -- %k)\" && exec ./settings-launcher.sh"
+TryExec=python3
+Icon=./assets/dual-screen-mode-settings.png
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true

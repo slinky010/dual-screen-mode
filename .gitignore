@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.log
+*.swp
+.codex/
+generated_images/
+upload/
+
+# Build outputs and old local archives belong in releases, not the source tree.
+dist/*
+!dist/.gitkeep
+
+# Draft artwork kept outside the published asset set.
+assets/dual-screen-mode-original.png
+assets/dual-screen-mode-v2.png
+
+# Design-only browser previews are kept locally, not shipped as part of the app.
+wizard-preview.html
+wizard-preview-final.html

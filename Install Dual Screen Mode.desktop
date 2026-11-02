@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Install Dual Screen Mode
+Comment=Install a wireless Wii U-style GamePad setup
+Exec=sh -c "cd -- \"$(dirname -- %k)\" && exec ./launch-wizard.sh"
+Icon=./assets/dual-screen-mode.png
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
