@@ -76,6 +76,7 @@ EOF
 
 cat > "$fake_bin/pactl" <<'EOF'
 #!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FAKE_STATE/pactl.log"
 case "${1:-}" in
     get-default-sink) printf '%s\n' 'test-sink' ;;
     get-sink-volume) printf '%s\n' 'Volume: front-left: 65536 / 100% / 0.00 dB, front-right: 65536 / 100% / 0.00 dB' ;;
@@ -99,6 +100,23 @@ run_toggle() {
         bash "$root_dir/dual-screen-mode.sh"
 }
 
+assert_mute_state() {
+    local expected="$1"
+    local message="$2"
+    for _ in {1..20}; do
+        if grep -Fxq "$expected" "$fake_state/mute" 2>/dev/null; then
+            return 0
+        fi
+        sleep 0.05
+    done
+    echo "FAIL $message" >&2
+    echo "Expected mute state: $expected" >&2
+    echo "Actual mute state: $(cat "$fake_state/mute" 2>/dev/null || echo '<missing>')" >&2
+    echo "pactl calls:" >&2
+    cat "$fake_state/pactl.log" 2>/dev/null >&2 || true
+    exit 1
+}
+
 run_toggle
 [[ -f "$runtime_dir/dual-screen-mode/active" ]] || { echo 'FAIL host mode did not activate'; exit 1; }
 grep -Fq 'stream_audio = disabled' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf" || { echo 'FAIL host mode did not disable stream audio'; exit 1; }
@@ -118,14 +136,14 @@ grep -Fxq 'DP-1' "$fake_state/touch-output" || { echo 'FAIL touch output mapping
 
 printf '%s\n' 'resolution=1280x800' 'audio_mode=handheld' > "$test_home/.config/dual-screen-mode/settings.conf"
 run_toggle
-grep -Fxq 'yes' "$fake_state/mute" || { echo 'FAIL handheld mode did not mute host audio'; exit 1; }
+assert_mute_state yes 'handheld mode did not mute host audio'
 run_toggle
-grep -Fxq 'no' "$fake_state/mute" || { echo 'FAIL handheld mode did not restore host mute state'; exit 1; }
+assert_mute_state no 'handheld mode did not restore host mute state'
 
 printf '%s\n' 'resolution=1280x800' 'audio_mode=both' > "$test_home/.config/dual-screen-mode/settings.conf"
 run_toggle
-grep -Fxq 'yes' "$fake_state/mute" || { echo 'FAIL both mode did not use handheld audio behavior'; exit 1; }
+assert_mute_state yes 'both mode did not use handheld audio behavior'
 run_toggle
-grep -Fxq 'no' "$fake_state/mute" || { echo 'FAIL both mode did not restore host mute state'; exit 1; }
+assert_mute_state no 'both mode did not restore host mute state'
 
 echo 'PASS toggle activation, deactivation, and audio restoration'
