@@ -191,7 +191,7 @@ Open **Dual Screen Mode Settings** from the Desktop and choose **Uninstall**. Th
 5. Double-click **Dual Screen Mode** again when you are finished.
 
 The virtual display remains active if Moonlight disconnects. That allows the
-handheld to reconnect without rebuilding the display.
+handheld to reconnect without rebuilding the display.Some adjustments in Display Configuration of the system settings may be necessary.
 
 ### Touch behavior
 
@@ -340,7 +340,7 @@ is no host touch device for Dual Screen Mode to route.
 ### The stream is hard to read
 
 Open **Dual Screen Mode Settings** and choose a display size that matches the
-handheld. Moonlight's own stream settings are outside this project.
+handheld. Moonlight's own stream settings are outside this project. You could also try adjusting the display settings, such as the scaling and such, in Display Configuration of the system settings. 
 
 ### The Settings app does not open
 
