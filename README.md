@@ -58,7 +58,7 @@ installing KDE's `krfb` package through `pacman`, and it can install Sunshine
 from the official Flathub app ID `dev.lizardbyte.app.Sunshine` if Sunshine is
 not already present.
 
-If `krfb` is missing, the wizard pauses and opens a visible Konsole window for
+If `krfb` is missing, the wizard has a built in installer and opens a visible Konsole window for
 the package installation. Enter the normal administrator password in Konsole,
 wait for the package operation to finish, close that terminal, and click
 **Check again** in the wizard. The wizard continues only after it confirms that
