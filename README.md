@@ -87,7 +87,7 @@ The short version is:
 5. If the KDE virtual-display package is missing, approve its installation in Konsole, close Konsole when it finishes, and click **Check again**.
 6. Continue through the wizard and let it create the two desktop shortcuts.
 
-### Visual setup guide
+## Visual setup guide
 
 <details>
 <summary>Open the step-by-step guide</summary>
