@@ -5,8 +5,28 @@ umask 077
 
 APP_ID="dev.lizardbyte.app.Sunshine"
 TOGGLE_DEST="$HOME/.local/bin/dual-screen-mode"
-DESKTOP_DEST="$HOME/Desktop/Dual Screen Mode.desktop"
-UNINSTALL_DESKTOP_DEST="$HOME/Desktop/Uninstall Dual Screen Mode.desktop"
+desktop_dir() {
+    local candidate=""
+    if command -v xdg-user-dir >/dev/null 2>&1; then
+        candidate="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+    fi
+    if [[ -z "$candidate" ]]; then
+        local user_dirs_file="${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
+        if [[ -r "$user_dirs_file" ]]; then
+            candidate="$(sed -n 's/^XDG_DESKTOP_DIR="\([^"]*\)".*/\1/p' "$user_dirs_file" | head -n 1)"
+            candidate="${candidate//\$HOME/$HOME}"
+        fi
+    fi
+    if [[ -z "$candidate" || "$candidate" != /* ]]; then
+        candidate="$HOME/Desktop"
+    fi
+    printf '%s\n' "$candidate"
+}
+DESKTOP_DIR="$(desktop_dir)"
+DESKTOP_DEST="$DESKTOP_DIR/Dual Screen Mode.desktop"
+UNINSTALL_DESKTOP_DEST="$DESKTOP_DIR/Uninstall Dual Screen Mode.desktop"
+LEGACY_DESKTOP_DEST="$HOME/Desktop/Dual Screen Mode.desktop"
+LEGACY_UNINSTALL_DESKTOP_DEST="$HOME/Desktop/Uninstall Dual Screen Mode.desktop"
 UNINSTALL_APP_DIR="$HOME/.local/share/dual-screen-mode"
 UNINSTALL_SCRIPT_DEST="$UNINSTALL_APP_DIR/uninstall.sh"
 MANAGEMENT_SCRIPT_DEST="$UNINSTALL_APP_DIR/settings-gui.py"
@@ -150,7 +170,7 @@ if [[ -f "$STATE_DIR/owned-toggle" ]]; then
     rm -f "$TOGGLE_DEST" "$STATE_DIR/owned-toggle"
 fi
 if [[ -f "$STATE_DIR/owned-launcher" ]]; then
-    rm -f "$DESKTOP_DEST" "$STATE_DIR/owned-launcher"
+    rm -f "$DESKTOP_DEST" "$LEGACY_DESKTOP_DEST" "$STATE_DIR/owned-launcher"
 fi
 if [[ -f "$STATE_DIR/owned-icon" ]]; then
     rm -f "$ICON_DEST" "$STATE_DIR/owned-icon"
@@ -177,7 +197,7 @@ if [[ -f "$OWNED_OVERRIDE_MARKER" ]]; then
 fi
 
 if [[ -f "$STATE_DIR/owned-uninstall-launcher" ]]; then
-    rm -f "$UNINSTALL_DESKTOP_DEST" "$STATE_DIR/owned-uninstall-launcher"
+    rm -f "$UNINSTALL_DESKTOP_DEST" "$LEGACY_UNINSTALL_DESKTOP_DEST" "$STATE_DIR/owned-uninstall-launcher"
 fi
 if [[ -f "$STATE_DIR/owned-uninstaller" ]]; then
     rm -f "$UNINSTALL_SCRIPT_DEST" "$STATE_DIR/owned-uninstaller"
@@ -198,3 +218,4 @@ fi
 if (( ! AUTO_CONFIRM )); then
     ui_message "Dual Screen Mode was uninstalled.\n\nIts shortcuts and settings are gone. Sunshine, Moonlight, krfb, and your backups were left installed."
 fi
+

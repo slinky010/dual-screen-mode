@@ -10,8 +10,28 @@ SUNSHINE_CONF="$HOME/.var/app/$APP_ID/config/sunshine/sunshine.conf"
 ENV_DIR="$HOME/.config/environment.d"
 ENV_FILE="$ENV_DIR/dual-screen-mode.conf"
 TOGGLE_DEST="$HOME/.local/bin/dual-screen-mode"
-DESKTOP_DEST="$HOME/Desktop/Dual Screen Mode.desktop"
-UNINSTALL_DESKTOP_DEST="$HOME/Desktop/Uninstall Dual Screen Mode.desktop"
+desktop_dir() {
+    local candidate=""
+    if command -v xdg-user-dir >/dev/null 2>&1; then
+        candidate="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+    fi
+    if [[ -z "$candidate" ]]; then
+        local user_dirs_file="${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs"
+        if [[ -r "$user_dirs_file" ]]; then
+            candidate="$(sed -n 's/^XDG_DESKTOP_DIR="\([^"]*\)".*/\1/p' "$user_dirs_file" | head -n 1)"
+            candidate="${candidate//\$HOME/$HOME}"
+        fi
+    fi
+    if [[ -z "$candidate" || "$candidate" != /* ]]; then
+        candidate="$HOME/Desktop"
+    fi
+    printf '%s\n' "$candidate"
+}
+DESKTOP_DIR="$(desktop_dir)"
+DESKTOP_DEST="$DESKTOP_DIR/Dual Screen Mode.desktop"
+UNINSTALL_DESKTOP_DEST="$DESKTOP_DIR/Uninstall Dual Screen Mode.desktop"
+LEGACY_DESKTOP_DEST="$HOME/Desktop/Dual Screen Mode.desktop"
+LEGACY_UNINSTALL_DESKTOP_DEST="$HOME/Desktop/Uninstall Dual Screen Mode.desktop"
 UNINSTALL_APP_DIR="$HOME/.local/share/dual-screen-mode"
 UNINSTALL_SCRIPT_DEST="$UNINSTALL_APP_DIR/uninstall.sh"
 MANAGEMENT_SCRIPT_DEST="$UNINSTALL_APP_DIR/settings-gui.py"
@@ -835,3 +855,4 @@ main() {
 
 welcome
 main
+
