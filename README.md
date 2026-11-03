@@ -1,7 +1,7 @@
 # Dual Screen Mode
 
 <p align="center">
-  <img src="assets/dual-screen-mode.png" alt="Monitor and handheld connected as a second screen" width="180">
+  <img src="assets/dual-screen-mode.png" alt="Monitor and handheld connected as a second screen" width="300">
 </p>
 
 <p align="center"><strong>Use a Steam Deck or other PC handheld as a wireless second screen for a Linux gaming PC.</strong></p>
