@@ -4,25 +4,22 @@ Beta release 0.1.4
 START HERE
 
 1. Extract this archive.
-2. Double-click: Install Dual Screen Mode.desktop
-3. Press Begin setup in the wizard to launch the installation.
+2. Open the extracted Dual Screen Mode folder.
+3. Double-click Install Dual Screen Mode.desktop.
+4. Choose Launch if KDE asks what to do with the file.
+5. Click Begin setup in the wizard.
 
-That is the only file you need to launch for a normal installation.
+You only need to launch the installer once. The wizard will check your system and explain anything that needs attention.
 
-After setup, two shortcuts are created on the Desktop:
+After setup, two shortcuts will be created in your configured Desktop folder:
 
-- Dual Screen Mode turns the virtual display on or off and routes Sunshine's
-  virtual touchscreen to it when available.
-- Dual Screen Mode Settings shows status, settings, help, updates, and uninstall.
+- Dual Screen Mode turns the virtual display on or off.
+- Dual Screen Mode Settings shows status, settings, help, updates, and uninstall options.
 
-Moonlight is installed separately on the handheld. Pair Moonlight with
-Sunshine manually through their normal pairing flow, then use the Dual Screen
-Mode shortcut on the host whenever you want the virtual display.
+Moonlight is installed separately on the handheld. Pair it with Sunshine through the normal Moonlight and Sunshine pairing process. After that, turn on Dual Screen Mode on the host and connect with Moonlight.
 
-The other files are the readable source code, documentation, and artwork. Do
-not launch the internal .sh or .py files manually unless you are inspecting or
-developing the project.
+The other files are included for documentation, source code, and development. You do not need to open the .sh or .py files for a normal installation.
 
-If the desktop file does not launch, open a terminal in this folder and run:
+If the desktop installer does not launch, open a terminal in this folder and run:
 
     ./launch-wizard.sh

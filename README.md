@@ -34,7 +34,7 @@ The currently validated host setup is:
 - KDE's `krfb-virtualmonitor` component
 - The host and handheld connected to the same local network
 
-The handheld can be a Steam Deck, another PC handheld, tablet, or phone that supports Moonlight.
+The client can be a Steam Deck, another PC handheld, tablet, or phone that supports Moonlight. Physical handheld controls are available only on devices that have them.
 
 Moonlight is installed and paired separately. Dual Screen Mode can install Sunshine on the host if it is missing, but it does not install Moonlight or pair the devices for you.
 
@@ -66,7 +66,7 @@ After the one-time setup, normal use is even simpler:
 3. Double-click **Install Dual Screen Mode.desktop**.
 4. Choose **Launch** if KDE asks what to do with the file. Do not choose **Open with Kate**.
 5. Click **Begin setup** and follow the wizard.
-6. When setup finishes, use the shortcuts created on your Desktop.
+6. When setup finishes, use the shortcuts created in your configured Desktop folder.
 
 The wizard checks the host before making changes. It explains anything that is missing and asks for confirmation before installing packages or changing settings.
 
@@ -127,7 +127,7 @@ Konsole will open and ask for your normal system password. The password is enter
 
 ![Enter your password in Konsole](docs/guide/8.jpg)
 
-Approve the package installation and wait for it to finish.
+When Konsole asks `Proceed with installation? [Y/n]`, type `y` and press Enter. Wait for the installation to finish.
 
 ![Approve the package installation](docs/guide/9.jpg)
 
@@ -141,7 +141,7 @@ The wizard will confirm that the required pieces are ready. Once the check passe
 
 Click **Continue** and let the wizard finish setting everything up.
 
-When setup is complete, two shortcuts will be created on your Desktop:
+When setup is complete, two shortcuts will be created in your configured Desktop folder:
 
 - **Dual Screen Mode** turns the virtual display on or off.
 - **Dual Screen Mode Settings** opens the management app for status, settings, updates, help, about, and uninstall.
@@ -150,17 +150,17 @@ When setup is complete, two shortcuts will be created on your Desktop:
 
 #### 8. Turn on Dual Screen Mode
 
-Double-click **Dual Screen Mode** on your Desktop.
+Double-click **Dual Screen Mode** in your configured Desktop folder.
 
 This turns on the virtual display and prepares Sunshine for the connection. You do not need to open Sunshine manually.
 
 ![Dual Screen Mode is ready](docs/guide/12.jpg)
 
-Open Moonlight on your handheld and connect to the host. Moonlight must already be installed and paired separately.
+Open Moonlight on your handheld, select the paired host, and start the stream. Moonlight must already be installed and paired separately.
 
 #### 9. Uninstall if you change your mind
 
-Open **Dual Screen Mode Settings** from the Desktop and choose **Uninstall**. The settings app removes Dual Screen Mode and its own changes without removing Sunshine, Moonlight, or `krfb`.
+Open **Dual Screen Mode Settings** from your configured Desktop folder and choose **Uninstall**. The settings app removes Dual Screen Mode and its own changes without removing Sunshine, Moonlight, or `krfb`.
 
 </details>
 
@@ -181,6 +181,8 @@ After setup:
 The virtual display remains active if Moonlight disconnects, so the handheld can reconnect without rebuilding the display.
 
 Choose a virtual display size that matches the handheld's screen. Some setups may also need adjustments in the host's KDE Display Configuration settings, such as scaling or display arrangement.
+
+The host must remain in KDE Desktop Mode while the virtual display is active.
 
 Emulator controller profiles and touch settings are configured separately inside each emulator.
 
