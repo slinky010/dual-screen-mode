@@ -6,76 +6,69 @@
 
 <p align="center"><strong>Use a Steam Deck or other PC handheld as a wireless second screen for a Linux gaming PC.</strong></p>
 
-Dual Screen Mode is a small KDE Plasma utility that makes a handheld work like a Wii U GamePad, a DS or 3DS second screen, or a regular wireless monitor.
+Dual Screen Mode is a small KDE Plasma utility that lets you use a handheld like a Wii U GamePad, a DS or 3DS second screen, or a regular wireless monitor.
 
-It creates a virtual display on the host PC, prepares Sunshine to stream that display, and gives you simple desktop shortcuts to turn the setup on and off. It is useful for emulation, but it is not limited to emulation.
+It creates a virtual display on the host PC, prepares Sunshine to stream that display, and gives you simple desktop shortcuts to turn the setup on and off.
+
+It can be used for emulation, but it is not limited to emulation. You can also use the handheld as an extra wireless display for regular desktop or gaming use.
 
 This is an early beta made for SteamOS and KDE Plasma on Wayland.
 
-## How the pieces fit together
+## Before you start
 
-- **Host:** The main Linux PC that runs the games and creates the virtual display.
+Dual Screen Mode uses two devices:
+
+- **Host:** The main Linux PC that runs your games and creates the virtual display.
 - **Handheld/client:** The Steam Deck or other device that connects to the host.
+
+The setup uses two existing streaming tools:
+
 - **Sunshine:** The streaming server running on the host.
 - **Moonlight:** The app on the handheld that connects to Sunshine.
 
-## Supported setup
-
-The currently validated setup is:
+The currently validated host setup is:
 
 - SteamOS or another Arch-based Linux installation
 - KDE Plasma on Wayland
 - Sunshine installed through Flatpak
-- Moonlight on the handheld or other client
 - KDE's `krfb-virtualmonitor` component
 - The host and handheld connected to the same local network
 
-The host must remain in KDE Desktop Mode while the virtual display is active. Switching a SteamOS host to Gaming Mode ends the desktop session that owns the display.
+The handheld can be a Steam Deck, another PC handheld, tablet, or phone that supports Moonlight.
 
-Other KDE, graphics, and handheld combinations may work, but they have not all been tested. Ubuntu, Fedora, GNOME, X11, and other non-Arch or non-KDE setups are not currently supported by the installer.
+Moonlight is installed and paired separately. Dual Screen Mode can install Sunshine on the host if it is missing, but it does not install Moonlight or pair the devices for you.
 
-## Before you start
+## What setup is like
 
-Dual Screen Mode prepares the host PC. Moonlight is installed and paired separately on the handheld.
+Once you download and extract Dual Screen Mode, the actual setup is only a few steps:
 
-Before using the mode:
+1. Double-click the installer.
+2. Click **Begin setup**.
+3. Follow the wizard's instructions.
+4. Connect Moonlight on your handheld.
 
-1. Install Moonlight on the handheld. It is not installed by Dual Screen Mode.
-2. Make sure Sunshine is running on the host.
-3. Pair Moonlight with Sunshine through their normal pairing process. This only needs to be done once.
-4. Keep both devices on the same local network.
+You do not need to copy terminal commands, edit configuration files, manually configure Sunshine, or search through KDE settings.
 
-On the first setup, the wizard checks the host, explains anything that is missing, and may install Sunshine or KDE's virtual-display package. When setup finishes, it creates the **Dual Screen Mode** and **Dual Screen Mode Settings** shortcuts.
+If the KDE virtual-display package is missing, the wizard opens Konsole and guides you through installing it. Enter your normal administrator password in Konsole, wait for the installation to finish, close the terminal, and click **Check again**.
 
-The setup wizard can install Sunshine on the host if it is missing. It does not install or pair Moonlight.
+Your password is entered in Konsole, not into Dual Screen Mode. The application does not collect or store it.
 
-## What it does
+After the one-time setup, normal use is even simpler:
 
-Dual Screen Mode:
-
-- Creates and removes a KDE virtual display.
-- Configures Sunshine to capture and stream that display.
-- Routes Sunshine's virtual touchscreen to the virtual display when KWin exposes it.
-- Applies the selected audio behavior for the session.
-- Creates a desktop toggle and a Settings app.
-- Restores temporary audio and touch-routing changes when the mode is turned off.
-
-It does not configure Cemu, Azahar, other emulators, games, or game-specific controller profiles. Moonlight pairing, gyro forwarding, and microphone forwarding are also outside this project.
+1. Double-click **Dual Screen Mode**.
+2. Connect with Moonlight.
+3. Use the handheld as your second screen.
 
 ## Install
 
-The short version:
-
-1. Download the latest release from GitHub and extract it.
+1. Download the latest release from GitHub and extract it somewhere easy to find.
 2. Open the extracted folder.
 3. Double-click **Install Dual Screen Mode.desktop**.
 4. Choose **Launch** if KDE asks what to do with the file. Do not choose **Open with Kate**.
 5. Click **Begin setup** and follow the wizard.
-6. When setup finishes, use the shortcuts it creates on your Desktop.
+6. When setup finishes, use the shortcuts created on your Desktop.
 
-If the KDE virtual-display package is missing, the wizard opens a visible Konsole window and guides you through installing it. Enter your normal administrator password in Konsole, wait for the package operation to finish, close Konsole, and click **Check again** in the wizard.
-
-Your password is entered in Konsole, not into Dual Screen Mode. The application does not collect or store it.
+The wizard checks the host before making changes. It explains anything that is missing and asks for confirmation before installing packages or changing settings.
 
 ## Visual setup guide
 
@@ -172,70 +165,87 @@ Open **Dual Screen Mode Settings** from the Desktop and choose **Uninstall**. Th
 </details>
 
 
+
 ## Normal use
+
+After setup:
 
 1. Double-click **Dual Screen Mode** on the host.
 2. Wait for the virtual display to become ready.
-3. Open Moonlight on the handheld and connect to the paired host.
-4. Start the stream.
-5. Enable Moonlight's gamepad mode when you want the handheld controls sent to the host.
-6. Double-click **Dual Screen Mode** again when you are finished.
+3. Open Moonlight on the handheld.
+4. Connect to the paired host.
+5. Start the stream.
+6. Enable Moonlight's gamepad mode when you want the handheld controls sent to the host.
+7. Double-click **Dual Screen Mode** again when you are finished.
 
 The virtual display remains active if Moonlight disconnects, so the handheld can reconnect without rebuilding the display.
 
-Choose a virtual display size that matches the handheld's screen. When you want the handheld controls sent to the host, enable Moonlight's gamepad mode. Emulator controller profiles and touch settings are configured separately inside each emulator.
+Choose a virtual display size that matches the handheld's screen. Some setups may also need adjustments in the host's KDE Display Configuration settings, such as scaling or display arrangement.
+
+Emulator controller profiles and touch settings are configured separately inside each emulator.
 
 ## Settings and session behavior
 
-**Dual Screen Mode Settings** lets you view status, change the available display and audio settings, open help, check updates, and uninstall the project.
+**Dual Screen Mode Settings** lets you:
 
-### Display
-
-Choose a virtual display size that matches the handheld. Some setups may also need adjustments in the host's KDE Display Configuration settings, such as scaling or display arrangement.
+- View the current status
+- Change the display size
+- Change the audio behavior
+- View help and diagnostic information
+- Check update information
+- Uninstall Dual Screen Mode
 
 ### Audio
 
 The wizard lets you choose how audio behaves during the session:
 
-- **Host:** Sunshine audio streaming is disabled. Host audio is left alone.
-- **Handheld:** Sunshine audio streaming is enabled, and the current default host output is muted temporarily.
+- **Host:** Audio stays on the host. Sunshine audio streaming is disabled.
+- **Handheld:** Audio streams to the handheld. The current default host output is muted temporarily.
 - **Both:** Work in progress. It currently behaves like **Handheld** mode.
 
-Before changing audio, the toggle saves the existing Sunshine audio setting and, when available, the current default output's volume and mute state. Those values are restored when the mode turns off.
+Before changing audio, Dual Screen Mode saves the existing Sunshine audio setting and, when available, the current default output's volume and mute state. Those values are restored when the mode turns off.
 
 The project does not install an audio driver, create a virtual audio device, change the system's default output, or alter other outputs.
 
 ### Touch
 
-When Sunshine exposes its virtual touchscreen, Dual Screen Mode maps it to `Virtual-DualScreen` through KWin. This keeps touch input associated with the handheld display instead of the host's main monitor.
+When Sunshine exposes its virtual touchscreen, Dual Screen Mode maps it to `Virtual-DualScreen` through KWin.
 
-Touch behavior inside Cemu, Azahar, or another application still depends on that application's own input settings.
+This keeps touch input associated with the handheld display instead of the host's main monitor. Touch behavior inside Cemu, Azahar, or another application still depends on that application's own input settings.
 
 ## Uninstall
 
 Open **Dual Screen Mode Settings** and choose **Uninstall**.
 
-The uninstaller removes Dual Screen Mode's shortcuts, settings, scripts, and owned configuration changes. It does not remove:
+The uninstaller removes Dual Screen Mode's shortcuts, settings, scripts, and owned configuration changes.
+
+It does not remove:
 
 - Sunshine
 - Moonlight
 - `krfb`
 - User backups
-- Your games or emulator files
+- Games or emulator files
 
 ## Troubleshooting
 
 ### Moonlight cannot find or pair with the host
 
-Make sure Sunshine is running, Moonlight has been paired with it, and both devices are on the same local network. Pairing is handled through Sunshine and Moonlight, not Dual Screen Mode.
+Make sure Sunshine is running, Moonlight has been paired with it, and both devices are on the same local network.
+
+Pairing is handled through Sunshine and Moonlight, not Dual Screen Mode.
 
 ### The handheld shows the host's main monitor
 
-Turn Dual Screen Mode off and on again, then reconnect Moonlight. The host should show a virtual output named `Virtual-DualScreen`.
+Turn Dual Screen Mode off and on again, then reconnect Moonlight.
+
+The host should show a virtual output named `Virtual-DualScreen`.
 
 ### Touch lands on the wrong monitor
 
-Turn the mode off and on again, then reconnect Moonlight. The Settings app will show whether touch routing is mapped or waiting for Sunshine's virtual touchscreen.
+Turn the mode off and on again, then reconnect Moonlight.
+
+The Settings app will show whether touch routing is mapped or waiting for Sunshine's virtual touchscreen.
 
 ### The stream is difficult to read
 
@@ -243,7 +253,9 @@ Choose a display size that matches the handheld. Then check Moonlight's stream r
 
 ### The Settings app does not open
 
-Rerun the installer from the current package so the Settings app and launcher are replaced together. If it still fails, inspect:
+Rerun the installer from the current package so the Settings app and launcher are replaced together.
+
+If it still fails, inspect:
 
 ```
 ~/.local/state/dual-screen-mode/settings-gui.log
@@ -260,6 +272,7 @@ This is a one-person beta tested primarily with a Steam Machine and Steam Deck.
 - Emulator-specific touch behavior is outside this project.
 - Gyro and microphone forwarding are not included.
 - Other KDE, graphics, and handheld combinations may have issues that have not been tested yet.
+- Ubuntu, Fedora, GNOME, X11, and other non-Arch or non-KDE setups are not currently supported by the installer.
 
 If something behaves strangely, open a GitHub issue and include the host, handheld, desktop session, display setup, and what happened.
 
