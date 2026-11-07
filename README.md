@@ -14,6 +14,32 @@ It can be used for emulation, but it is not limited to emulation. You can also u
 
 This is an early beta made for SteamOS and KDE Plasma on Wayland.
 
+## What's new
+
+This update documents the current beta and the parts that are ready to use:
+
+- **DSU Motion Probe:** A standalone diagnostic tool checks whether motion data is reaching the host, identifies the controller and gyro capability, reports packet health and rate, and shows live accelerometer and gyroscope data with a temporary visual calibration view.
+- **Cemu setup:** DSM prepares the **Dual Screen Mode Deck Gyro** profile, updates its DSU connection, and preserves the existing controls. Start DSM with Cemu closed, wait for the profile-ready notification, then select the profile in Cemu.
+- **Status and reliability:** Settings refreshes display, Sunshine, touch, and motion status automatically; Deck discovery can use the saved address or local-network scan; display placement, touch routing, startup refresh, and duplicate-click handling are more consistent.
+
+## Changelog
+
+### Current beta
+
+- Added live status updates for the virtual display, Sunshine, touch routing, and DSU motion.
+- Added automatic Deck discovery with a settling window before local-network fallback.
+- Added the standalone **DSU Motion Probe** for connection details, gyro detection, packet-health statistics, and live motion readings.
+- Added a Sunshine refresh at mode startup and stronger cleanup when the mode is disabled.
+- Simplified Cemu setup so DSM prepares the Deck Gyro profile and DSU address automatically.
+
+### Coming next
+
+- Explore SteamOS Game Mode support so DSM can be used without switching to Desktop Mode.
+- Explore a Windows edition for Windows hosts.
+- Finish the **Both** audio mode so host and handheld audio behavior can be selected intentionally.
+- Finish and validate the Updates tab so checking for and applying new DSM versions is reliable.
+- Continue broader handheld, hardware, and network compatibility testing.
+
 ## Before you start
 
 Dual Screen Mode uses two devices:
@@ -186,6 +212,44 @@ The host must remain in KDE Desktop Mode while the virtual display is active.
 
 Emulator controller profiles and touch settings are configured separately inside each emulator.
 
+## Motion and gyro health
+
+Motion monitoring is enabled by default after setup. It checks the Deck's local DSU motion connection while Dual Screen Mode is active and reconnects automatically if the Deck briefly disappears.
+
+The Deck address is optional. When it is blank, Dual Screen Mode and Dual Screen Mode Settings search the local network for the Deck's motion service and save a discovered address. **Find Deck** and manual entry remain available as fallbacks. Discovery never uses the internet.
+
+When a saved address is present, DSM gives it a settling window of about five seconds before falling back to the local-network scan, so a Deck that is waking up is not rejected too quickly.
+
+Settings refreshes virtual-display, Sunshine, touch-routing, and motion status together about once per second. It uses clear states such as **Connected**, **Looking for your Steam Deck…**, **Connecting…**, **Unable to connect**, and **Disabled**.
+
+### DSU Motion Probe
+
+The DSU Motion Probe is a separate, optional diagnostic window for checking the Deck's motion connection before opening Cemu or another emulator. It helps answer the basic question: **is motion data actually reaching the host?**
+
+The probe shows:
+
+- Whether the Deck's DSU service responds
+- Which controller is connected and whether full gyro data is available
+- Live packet rate, valid packets, invalid packets, and detected sequence gaps
+- Live accelerometer and gyroscope readings
+- A visual gravity view that responds as the Deck moves
+
+**Calibrate** only recenters the probe's temporary visual gravity view. It does not change raw DSU data, emulator settings, or anything on the Deck. A connected probe confirms that DSM is receiving motion packets; it does not claim that Cemu or another emulator is using them.
+
+### Cemu setup
+
+DSM does not install Cemu or create a general emulator configuration. For Cemu, it prepares a focused **Dual Screen Mode Deck Gyro** profile when DSM starts.
+
+1. Close Cemu.
+2. Start Dual Screen Mode.
+3. Wait for the Deck Gyro profile-ready notification.
+4. Open Cemu Input settings and select **Dual Screen Mode Deck Gyro**.
+
+DSM prepares the DSU connection on port **26760**, adds the Deck motion source as **DSMController**, preserves the existing mappings, and backs up the previous profile and settings. No manual IP entry, controller creation, or **Add input API** step should be needed. If Cemu was open during startup, close and reopen it once after DSM reports that the profile is ready.
+
+Azahar, melonDS, and other emulators keep their own controller and motion settings. DSM's responsibility is to keep the local DSU path and handheld touchscreen available.
+
+
 ## Settings and session behavior
 
 **Dual Screen Mode Settings** lets you:
@@ -231,6 +295,19 @@ It does not remove:
 
 ## Troubleshooting
 
+### Motion says Unable to connect
+
+Make sure the Deck's DSU motion service is running and both devices are on the same local network. Open Settings and use **Find Deck**. Manual entry remains available if local discovery cannot find the service.
+
+### Cemu needs a manual DSU address
+
+Close Cemu before starting Dual Screen Mode. Do not open Cemu until DSM shows the Deck Gyro profile-ready notification. Then open Cemu's Input settings and select **Dual Screen Mode Deck Gyro**. DSM prepares the DSU address for that profile; you should not need to add a DSU controller or type the IP manually.
+
+### I clicked the shortcut twice
+
+The toggle accepts one action at a time. Duplicate clicks are ignored while the mode is starting or disabling, and a very fast second click after disabling cannot immediately enable the mode again. Wait a moment before intentionally starting it again.
+
+
 ### Moonlight cannot find or pair with the host
 
 Make sure Sunshine is running, Moonlight has been paired with it, and both devices are on the same local network.
@@ -265,6 +342,10 @@ If it still fails, inspect:
 
 The Settings app's Help page can also open the Sunshine log and copy a small diagnostic summary.
 
+## Coming next
+
+The next project focus is SteamOS Game Mode support, a Windows edition, a finished **Both** audio mode, a reliable Updates tab, and broader compatibility testing.
+
 ## Known limitations
 
 This is a one-person beta tested primarily with a Steam Machine and Steam Deck.
@@ -272,7 +353,7 @@ This is a one-person beta tested primarily with a Steam Machine and Steam Deck.
 - The **Both** audio option is still a work in progress.
 - Touch routing depends on Sunshine exposing a virtual touchscreen and KWin exposing the required input mapping.
 - Emulator-specific touch behavior is outside this project.
-- Gyro and microphone forwarding are not included.
+- Microphone forwarding is not included. Cemu receives the focused DSMController profile described above; emulator-facing motion selection for Azahar, melonDS, and other emulators remains separate.
 - Other KDE, graphics, and handheld combinations may have issues that have not been tested yet.
 - Ubuntu, Fedora, GNOME, X11, and other non-Arch or non-KDE setups are not currently supported by the installer.
 
