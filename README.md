@@ -212,6 +212,8 @@ The host must remain in KDE Desktop Mode while the virtual display is active.
 
 Emulator controller profiles and touch settings are configured separately inside each emulator.
 
+The toggle accepts one action at a time. **Rapid duplicate clicks are ignored** while the mode is starting or disabling, and a very fast second click after disabling cannot immediately re-enable the mode.
+
 ## Motion and gyro health
 
 Motion monitoring is enabled by default after setup. It checks the Deck's local DSU motion connection while Dual Screen Mode is active and reconnects automatically if the Deck briefly disappears.
