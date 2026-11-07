@@ -4,6 +4,7 @@ set -u
 umask 077
 
 APP_ID="dev.lizardbyte.app.Sunshine"
+SUNSHINE_CONF="$HOME/.var/app/$APP_ID/config/sunshine/sunshine.conf"
 TOGGLE_DEST="$HOME/.local/bin/dual-screen-mode"
 desktop_dir() {
     local candidate=""
@@ -31,17 +32,34 @@ UNINSTALL_APP_DIR="$HOME/.local/share/dual-screen-mode"
 UNINSTALL_SCRIPT_DEST="$UNINSTALL_APP_DIR/uninstall.sh"
 MANAGEMENT_SCRIPT_DEST="$UNINSTALL_APP_DIR/settings-gui.py"
 MANAGEMENT_LAUNCHER_DEST="$UNINSTALL_APP_DIR/settings-launcher.sh"
+MOTION_MONITOR_DEST="$UNINSTALL_APP_DIR/motion_monitor.py"
+MOTION_DISCOVERY_DEST="$UNINSTALL_APP_DIR/motion_discovery.py"
+DISPLAY_LAYOUT_DEST="$UNINSTALL_APP_DIR/display_layout.py"
+CEMU_PROFILE_DEST="$UNINSTALL_APP_DIR/cemu_profile.py"
+MOTION_PROBE_DIR_DEST="$UNINSTALL_APP_DIR/motion_probe"
 ICON_DEST="$HOME/.local/share/icons/dual-screen-mode.png"
 SETTINGS_ICON_DEST="$HOME/.local/share/icons/dual-screen-mode-settings.png"
 ENV_FILE="$HOME/.config/environment.d/dual-screen-mode.conf"
 SETTINGS_FILE="$HOME/.config/dual-screen-mode/settings.conf"
 SETTINGS_DIR="$HOME/.config/dual-screen-mode"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/dual-screen-mode"
+STARTING_FILE="$RUNTIME_DIR/starting"
+START_CANCEL_FILE="$RUNTIME_DIR/start-cancel"
+SUNSHINE_PID_FILE="$RUNTIME_DIR/sunshine.pid"
+SUNSHINE_START_FILE="$RUNTIME_DIR/sunshine.start"
+SUNSHINE_INSTANCE_FILE="$RUNTIME_DIR/sunshine.instance"
+SUNSHINE_OWNED_FILE="$RUNTIME_DIR/sunshine.owned"
+SUNSHINE_PREEXISTING_FILE="$RUNTIME_DIR/sunshine.preexisting"
+SUNSHINE_SESSION_CONFIG_FILE="$RUNTIME_DIR/sunshine-config"
 TOUCH_MAPPING_FILE="$RUNTIME_DIR/touch-mappings"
+TOUCH_WATCHER_PID_FILE="$RUNTIME_DIR/touch-watcher.pid"
+DISCOVERY_PID_FILE="$RUNTIME_DIR/motion-discovery.pid"
+MOTION_PID_FILE="$RUNTIME_DIR/motion-monitor.pid"
 STATE_DIR="$HOME/.local/state/dual-screen-mode"
 VIRTUAL_NAME="DualScreen"
 OWNED_ENV_MARKER="$STATE_DIR/owned-environment-setting"
 OWNED_OVERRIDE_MARKER="$STATE_DIR/owned-sunshine-override"
+OWNED_SUNSHINE_CONFIG_MARKER="$STATE_DIR/owned-sunshine-config"
 OWNED_SETTINGS_ICON_MARKER="$STATE_DIR/owned-settings-icon"
 
 DRY_RUN=0
@@ -55,6 +73,16 @@ fi
 
 have() {
     command -v "$1" >/dev/null 2>&1
+}
+
+run_bounded() {
+    local seconds="$1"
+    shift
+    if have timeout; then
+        timeout --kill-after=1s "${seconds}s" "$@"
+    else
+        "$@"
+    fi
 }
 
 ui_message() {
@@ -91,8 +119,92 @@ stop_vmonitor_pid() {
     local pid="$1"
     if vmonitor_pid_is_ours "$pid"; then
         kill -CONT "$pid" 2>/dev/null || true
-        kill "$pid" 2>/dev/null || true
+        terminate_process_tree "$pid"
+        for _ in {1..10}; do
+            [[ ! -d "/proc/$pid" ]] && break
+            sleep 0.1
+        done
     fi
+}
+
+motion_monitor_pid_is_ours() {
+    local pid="$1"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [[ -r "/proc/$pid/cmdline" && -O "/proc/$pid" ]] || return 1
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
+        grep -Fq "$MOTION_MONITOR_DEST"
+}
+
+sunshine_pid_is_ours() {
+    local pid="$1"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [[ -r "/proc/$pid/cmdline" && -O "/proc/$pid" ]] || return 1
+
+    if [[ -f "$SUNSHINE_START_FILE" ]]; then
+        local expected_start actual_start
+        expected_start="$(cat "$SUNSHINE_START_FILE" 2>/dev/null || true)"
+        actual_start="$(awk '{ print $22 }' "/proc/$pid/stat" 2>/dev/null || true)"
+        if [[ "$expected_start" =~ ^[0-9]+$ && "$actual_start" =~ ^[0-9]+$ &&
+            "$expected_start" == "$actual_start" ]]; then
+            return 0
+        fi
+    fi
+
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
+        grep -Fq "$APP_ID" && return 0
+    grep -Fq "$APP_ID" "/proc/$pid/cgroup" 2>/dev/null
+}
+
+motion_discovery_pid_is_ours() {
+    local pid="$1"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [[ -r "/proc/$pid/cmdline" && -O "/proc/$pid" ]] || return 1
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
+        grep -Fq "dual-screen-mode"
+}
+
+touch_watcher_pid_is_ours() {
+    local pid="$1"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [[ -r "/proc/$pid/cmdline" && -O "/proc/$pid" ]] || return 1
+    tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null |
+        grep -Fq "dual-screen-mode"
+}
+
+terminate_process_tree() {
+    local pid="$1"
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 0
+
+    local child
+    if have pgrep; then
+        while IFS= read -r child; do
+            [[ -n "$child" ]] || continue
+            terminate_process_tree "$child"
+        done < <(pgrep -P "$pid" 2>/dev/null || true)
+    fi
+    kill "$pid" 2>/dev/null || true
+}
+
+stop_runtime_process() {
+    local pid_file="$1"
+    local ownership_check="$2"
+    [[ -f "$pid_file" ]] || return 0
+    local pid
+    pid="$(cat "$pid_file" 2>/dev/null || true)"
+    local owned=0
+    case "$ownership_check" in
+        motion) motion_discovery_pid_is_ours "$pid" && owned=1 ;;
+        touch) touch_watcher_pid_is_ours "$pid" && owned=1 ;;
+        monitor) motion_monitor_pid_is_ours "$pid" && owned=1 ;;
+    esac
+    if (( owned )); then
+        terminate_process_tree "$pid"
+    fi
+    rm -f "$pid_file"
+}
+
+stop_motion_monitor() {
+    stop_runtime_process "$MOTION_PID_FILE" monitor
 }
 
 restore_touch_mappings() {
@@ -108,7 +220,7 @@ restore_touch_mappings() {
         local device old_output
         while IFS=$'\t' read -r device old_output; do
             [[ -n "$device" ]] || continue
-            "$dbus_tool" \
+            run_bounded 3 "$dbus_tool" \
                 org.kde.KWin \
                 "/org/kde/KWin/InputDevice/$device" \
                 org.freedesktop.DBus.Properties.Set \
@@ -120,15 +232,93 @@ restore_touch_mappings() {
     rm -f "$TOUCH_MAPPING_FILE" "$RUNTIME_DIR/touch-status" "$RUNTIME_DIR/touch-watcher.pid"
 }
 
+set_sunshine_config_key() {
+    local key="$1"
+    local value="$2"
+    mkdir -p "$(dirname "$SUNSHINE_CONF")"
+    touch "$SUNSHINE_CONF"
+    if grep -Eq "^[[:space:]]*${key}[[:space:]]*=" "$SUNSHINE_CONF" 2>/dev/null; then
+        sed -i -E "s|^[[:space:]]*${key}[[:space:]]*=.*$|${key} = ${value}|" "$SUNSHINE_CONF"
+    else
+        printf '%s = %s\n' "$key" "$value" >> "$SUNSHINE_CONF"
+    fi
+}
+
+restore_audio_state() {
+    [[ -f "$RUNTIME_DIR/audio.state" ]] || return 0
+
+    local stream_value sink volume mute
+    stream_value="$(awk -F= '$1 == "stream_audio" { print substr($0, index($0, "=") + 1); exit }' "$RUNTIME_DIR/audio.state")"
+    sink="$(awk -F= '$1 == "sink" { print substr($0, index($0, "=") + 1); exit }' "$RUNTIME_DIR/audio.state")"
+    volume="$(awk -F= '$1 == "volume" { print substr($0, index($0, "=") + 1); exit }' "$RUNTIME_DIR/audio.state")"
+    mute="$(awk -F= '$1 == "mute" { print substr($0, index($0, "=") + 1); exit }' "$RUNTIME_DIR/audio.state")"
+
+    if [[ "$stream_value" == "__MISSING__" ]]; then
+        sed -i '/^[[:space:]]*stream_audio[[:space:]]*=/d' "$SUNSHINE_CONF" 2>/dev/null || true
+    elif [[ -n "$stream_value" ]]; then
+        set_sunshine_config_key stream_audio "$stream_value"
+    fi
+    if [[ -n "$sink" ]] && have pactl; then
+        [[ -n "$volume" ]] && pactl set-sink-volume "$sink" "$volume" 2>/dev/null || true
+        [[ "$mute" == "yes" || "$mute" == "no" ]] && pactl set-sink-mute "$sink" "$mute" 2>/dev/null || true
+    fi
+    rm -f "$RUNTIME_DIR/audio.state"
+}
+
+restore_sunshine_key() {
+    local key="$1"
+    local original="$2"
+    [[ -f "$SUNSHINE_CONF" ]] || {
+        [[ "$original" == "__MISSING__" ]] && return 0
+        mkdir -p "$(dirname "$SUNSHINE_CONF")"
+        : > "$SUNSHINE_CONF"
+    }
+    sed -i -E "/^[[:space:]]*${key}[[:space:]]*=/d" "$SUNSHINE_CONF"
+    if [[ "$original" != "__MISSING__" && -n "$original" ]]; then
+        printf '%s\n' "$original" >> "$SUNSHINE_CONF"
+    fi
+}
+
+restore_sunshine_config() {
+    [[ -f "$OWNED_SUNSHINE_CONFIG_MARKER" ]] || return 0
+    local capture_line output_line
+    capture_line="$(awk -F= '$1 == "capture_line" { print substr($0, index($0, "=") + 1); exit }' "$OWNED_SUNSHINE_CONFIG_MARKER")"
+    output_line="$(awk -F= '$1 == "output_name_line" { print substr($0, index($0, "=") + 1); exit }' "$OWNED_SUNSHINE_CONFIG_MARKER")"
+    [[ -n "$capture_line" ]] || capture_line="__MISSING__"
+    [[ -n "$output_line" ]] || output_line="__MISSING__"
+    restore_sunshine_key capture "$capture_line" || return 1
+    restore_sunshine_key output_name "$output_line" || return 1
+    rm -f "$OWNED_SUNSHINE_CONFIG_MARKER"
+}
+
 stop_mode() {
+    if [[ -f "$STARTING_FILE" && -x "$TOGGLE_DEST" ]]; then
+        touch "$START_CANCEL_FILE"
+        for _ in {1..60}; do
+            [[ ! -f "$STARTING_FILE" ]] && break
+            sleep 0.1
+        done
+    fi
     if [[ -f "$RUNTIME_DIR/active" && -x "$TOGGLE_DEST" ]]; then
         "$TOGGLE_DEST" >/dev/null 2>&1 || true
-        return 0
     fi
 
+    stop_runtime_process "$DISCOVERY_PID_FILE" motion
+    stop_runtime_process "$TOUCH_WATCHER_PID_FILE" touch
     restore_touch_mappings
-    if [[ -f "$RUNTIME_DIR/sunshine.pid" ]]; then
-        flatpak kill "$APP_ID" 2>/dev/null || true
+    stop_motion_monitor
+    if [[ -f "$SUNSHINE_INSTANCE_FILE" ]]; then
+        local sunshine_instance
+        sunshine_instance="$(cat "$SUNSHINE_INSTANCE_FILE" 2>/dev/null || true)"
+        if [[ -n "$sunshine_instance" ]]; then
+            run_bounded 5 flatpak kill "$sunshine_instance" 2>/dev/null || true
+        fi
+    elif [[ -f "$SUNSHINE_PID_FILE" || -f "$SUNSHINE_OWNED_FILE" ]]; then
+        local sunshine_pid
+        sunshine_pid="$(cat "$SUNSHINE_PID_FILE" 2>/dev/null || true)"
+        if [[ -f "$SUNSHINE_OWNED_FILE" ]] || sunshine_pid_is_ours "$sunshine_pid"; then
+            run_bounded 5 flatpak kill "$APP_ID" 2>/dev/null || true
+        fi
     fi
     if [[ -f "$RUNTIME_DIR/vmonitor.pid" ]]; then
         local pid
@@ -139,7 +329,9 @@ stop_mode() {
             stop_vmonitor_pid "$pid"
         done < <(pgrep -u "$(id -u)" -f '(^|/)krfb-virtualmonitor([[:space:]]|$)' 2>/dev/null || true)
     fi
-    rm -f "$RUNTIME_DIR/active" "$RUNTIME_DIR/vmonitor.pid" "$RUNTIME_DIR/sunshine.pid" "$RUNTIME_DIR/audio.state"
+    restore_audio_state
+    restore_sunshine_config
+    rm -f "$RUNTIME_DIR/active" "$RUNTIME_DIR/stopping" "$STARTING_FILE" "$START_CANCEL_FILE" "$RUNTIME_DIR/vmonitor.pid" "$RUNTIME_DIR/sunshine.pid" "$SUNSHINE_START_FILE" "$SUNSHINE_INSTANCE_FILE" "$SUNSHINE_OWNED_FILE" "$SUNSHINE_PREEXISTING_FILE" "$SUNSHINE_SESSION_CONFIG_FILE" "$RUNTIME_DIR/motion-status" "$RUNTIME_DIR/motion-monitor.log" "$MOTION_PID_FILE" "$DISCOVERY_PID_FILE" "$TOUCH_WATCHER_PID_FILE"
 }
 
 if (( DRY_RUN )); then
@@ -149,11 +341,13 @@ if (( DRY_RUN )); then
         "Would remove the owned launcher: $DESKTOP_DEST" \
         "Would remove the owned uninstall launcher: $UNINSTALL_DESKTOP_DEST" \
         "Would remove the settings app: $MANAGEMENT_SCRIPT_DEST" \
+        "Would remove the motion monitor and diagnostics tool" \
         "Would remove the owned icon: $ICON_DEST" \
         "Would remove the owned settings icon: $SETTINGS_ICON_DEST" \
         "Would remove the owned display and audio choices: $SETTINGS_FILE" \
         "Would remove the owned KWin environment setting" \
         "Would remove the owned Sunshine Flatpak override" \
+        "Would restore the owned Sunshine capture settings" \
         "Sunshine, Moonlight, krfb, and user backups would remain installed"
     exit 0
 fi
@@ -204,7 +398,9 @@ if [[ -f "$STATE_DIR/owned-uninstaller" ]]; then
     rmdir "$UNINSTALL_APP_DIR" 2>/dev/null || true
 fi
 if [[ -f "$STATE_DIR/owned-management-app" ]]; then
-    rm -f "$MANAGEMENT_SCRIPT_DEST" "$STATE_DIR/owned-management-app"
+    rm -f "$MANAGEMENT_SCRIPT_DEST" "$MOTION_MONITOR_DEST" "$MOTION_DISCOVERY_DEST" "$DISPLAY_LAYOUT_DEST" "$CEMU_PROFILE_DEST" "$MOTION_PROBE_DIR_DEST/dsu_motion_probe.py" "$MOTION_PROBE_DIR_DEST/__init__.py"
+    rmdir "$MOTION_PROBE_DIR_DEST" 2>/dev/null || true
+    rm -f "$STATE_DIR/owned-management-app"
     rmdir "$UNINSTALL_APP_DIR" 2>/dev/null || true
 fi
 if [[ -f "$STATE_DIR/owned-management-launcher" ]]; then

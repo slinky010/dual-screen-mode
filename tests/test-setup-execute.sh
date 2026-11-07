@@ -41,6 +41,8 @@ fi
 EOF
 
 chmod +x "$fake_bin"/*
+mkdir -p "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine"
+printf '%s\n' 'capture = nvenc' 'output_name = DP-1' 'custom_setting = preserve-me' > "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf"
 
 HOME="$test_home" \
 FAKE_DESKTOP="$desktop_dir" \
@@ -52,6 +54,9 @@ PATH="$fake_bin:$PATH" \
 grep -Fxq 'resolution=1920x1080' "$test_home/.config/dual-screen-mode/settings.conf"
 ! grep -q '^device=' "$test_home/.config/dual-screen-mode/settings.conf"
 grep -Fxq 'audio_mode=both' "$test_home/.config/dual-screen-mode/settings.conf"
+grep -Fxq 'motion_enabled=1' "$test_home/.config/dual-screen-mode/settings.conf"
+grep -Fxq 'motion_port=26760' "$test_home/.config/dual-screen-mode/settings.conf"
+grep -Fxq 'motion_slot=0' "$test_home/.config/dual-screen-mode/settings.conf"
 grep -Fxq 'capture = kwin' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf"
 grep -Fxq 'output_name = Virtual-DualScreen' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf"
 [[ -x "$test_home/.local/bin/dual-screen-mode" ]]
@@ -60,6 +65,9 @@ grep -Fxq 'output_name = Virtual-DualScreen' "$test_home/.var/app/dev.lizardbyte
 [[ ! -e "$test_home/Desktop/Dual Screen Mode.desktop" ]]
 [[ -x "$test_home/.local/share/dual-screen-mode/settings-gui.py" ]]
 [[ -x "$test_home/.local/share/dual-screen-mode/settings-launcher.sh" ]]
+[[ -x "$test_home/.local/share/dual-screen-mode/motion_discovery.py" ]]
+[[ -x "$test_home/.local/share/dual-screen-mode/display_layout.py" ]]
+[[ -x "$test_home/.local/share/dual-screen-mode/cemu_profile.py" ]]
 [[ -f "$test_home/.local/share/icons/dual-screen-mode-settings.png" ]]
 grep -Fq 'settings-gui.py' "$desktop_dir/Uninstall Dual Screen Mode.desktop"
 grep -Fq 'settings-launcher.sh' "$desktop_dir/Uninstall Dual Screen Mode.desktop"
@@ -86,6 +94,9 @@ PATH="$fake_bin:$PATH" \
 [[ ! -e "$desktop_dir/Uninstall Dual Screen Mode.desktop" ]]
 [[ ! -e "$test_home/Desktop/Dual Screen Mode.desktop" ]]
 [[ ! -e "$test_home/Desktop/Uninstall Dual Screen Mode.desktop" ]]
+grep -Fxq 'capture = nvenc' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf"
+grep -Fxq 'output_name = DP-1' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf"
+grep -Fxq 'custom_setting = preserve-me' "$test_home/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf"
 
 echo 'PASS graphical backend execution path'
 

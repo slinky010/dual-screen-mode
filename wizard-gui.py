@@ -54,6 +54,7 @@ class DualScreenWizard(tk.Tk):
         self.install_process = None
         self.krfb_missing = False
         self.check_started = False
+        self.test_running = False
         self.events = queue.Queue()
         self.output_lines = []
 
@@ -62,6 +63,10 @@ class DualScreenWizard(tk.Tk):
         self.check_status_var = tk.StringVar(value="Checking this computer when you reach this step.")
         self.progress_detail_var = tk.StringVar(value="Waiting to begin.")
         self.test_result_var = tk.StringVar(value="")
+        self.requirement_status_vars = {
+            key: tk.StringVar(value="Checking")
+            for key in ("host", "sunshine", "display", "graphics")
+        }
 
         self.setup_styles()
         self.load_artwork()
@@ -100,13 +105,13 @@ class DualScreenWizard(tk.Tk):
             original = tk.PhotoImage(file=str(ICON_PATH))
             factor = max(1, original.width() // 320)
             self.logo_large = original.subsample(factor, factor)
-            self.logo_small = original.subsample(max(1, original.width() // 52), max(1, original.height() // 52))
+            self.logo_small = original.subsample(max(1, original.width() // 100), max(1, original.height() // 100))
         except tk.TclError:
             self.logo_large = None
             self.logo_small = None
 
     def build_shell(self):
-        self.rail = tk.Frame(self, bg=self.COLORS["rail"], width=310)
+        self.rail = tk.Frame(self, bg=self.COLORS["rail"], width=350)
         self.rail.pack(side="left", fill="y")
         self.rail.pack_propagate(False)
 
@@ -114,7 +119,7 @@ class DualScreenWizard(tk.Tk):
         brand.pack(fill="x", padx=24, pady=(26, 52))
         brand.grid_columnconfigure(1, weight=1, minsize=0)
         if self.logo_small:
-            tk.Label(brand, image=self.logo_small, bg=self.COLORS["paper"], padx=5, pady=5).grid(row=0, column=0, sticky="nw")
+            tk.Label(brand, image=self.logo_small, bg=self.COLORS["rail"], borderwidth=0, highlightthickness=0, padx=0, pady=0).grid(row=0, column=0, sticky="nw")
         brand_text = tk.Frame(brand, bg=self.COLORS["rail"])
         brand_text.grid(row=0, column=1, sticky="new", padx=(11, 0))
         brand_text.grid_columnconfigure(0, weight=1)
@@ -221,14 +226,20 @@ class DualScreenWizard(tk.Tk):
         fg = "#ffffff" if primary else self.COLORS["ink"]
         return tk.Button(parent, text=text, command=command, bg=bg, fg=fg, activebackground=self.COLORS["blue_bright"], activeforeground="#ffffff", relief="flat", bd=0, padx=16, pady=10, font=("TkDefaultFont", 10, "bold"), cursor="hand2")
 
-    def card(self, parent, title, detail, symbol="✓", column=0, row=0):
+    def card(self, parent, title, detail, column=0, row=0, symbol="", status_var=None):
         frame = tk.Frame(parent, bg=self.COLORS["paper2"], highlightbackground=self.COLORS["line"], highlightthickness=1)
         frame.grid(column=column, row=row, sticky="nsew", padx=6, pady=6)
-        tk.Label(frame, text=symbol, bg=self.COLORS["paper2"], fg=self.COLORS["good"], font=("TkDefaultFont", 14, "bold")).pack(side="left", padx=(14, 8), pady=14)
+        if symbol:
+            icon = tk.Frame(frame, bg="#20384a", width=46, height=46)
+            icon.pack(side="left", padx=(14, 10), pady=12)
+            icon.pack_propagate(False)
+            tk.Label(icon, text=symbol, bg="#20384a", fg=self.COLORS["blue_bright"], font=("TkDefaultFont", 17, "bold")).pack(expand=True)
         text = tk.Frame(frame, bg=self.COLORS["paper2"])
-        text.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=12)
+        text.pack(side="left", fill="both", expand=True, padx=(0, 12 if status_var else 14), pady=12)
         tk.Label(text, text=title, bg=self.COLORS["paper2"], fg=self.COLORS["ink"], font=("TkDefaultFont", 10, "bold"), anchor="w").pack(anchor="w")
         tk.Label(text, text=detail, bg=self.COLORS["paper2"], fg=self.COLORS["soft"], font=("TkDefaultFont", 9), anchor="w", wraplength=230, justify="left").pack(anchor="w", pady=(3, 0))
+        if status_var is not None:
+            tk.Label(frame, textvariable=status_var, bg=self.COLORS["paper2"], fg=self.COLORS["soft"], font=("TkDefaultFont", 8, "bold"), anchor="e").pack(side="right", padx=(0, 14))
         return frame
 
     def heading(self, page, eyebrow, title, lede):
@@ -247,8 +258,7 @@ class DualScreenWizard(tk.Tk):
         self.make_label(left, "Set up a Steam Deck or PC handheld as a wireless second screen for Wii U and 3DS games, emulation, and other two-screen setups.", size=11, color=self.COLORS["soft"], wrap=470).pack(anchor="w", pady=(16, 0))
         callout = tk.Frame(left, bg="#1b3044", highlightbackground="#315d80", highlightthickness=1)
         callout.pack(fill="x", pady=(25, 0))
-        tk.Label(callout, text="✦", bg="#1b3044", fg=self.COLORS["cyan"], font=("TkDefaultFont", 14, "bold")).pack(side="left", padx=14, pady=14)
-        tk.Label(callout, text="Moonlight is installed separately.\nPair it with Sunshine manually after setup.", bg="#1b3044", fg="#c0cfdd", font=("TkDefaultFont", 9), justify="left", anchor="w").pack(side="left", pady=14)
+        tk.Label(callout, text="Moonlight is installed separately.\nPair it with Sunshine manually after setup.", bg="#1b3044", fg="#c0cfdd", font=("TkDefaultFont", 9), justify="left", anchor="w").pack(anchor="w", padx=16, pady=14)
         art = tk.Frame(body, bg=self.COLORS["paper"])
         art.pack(side="right", fill="both", expand=True)
         if self.logo_large:
@@ -261,14 +271,13 @@ class DualScreenWizard(tk.Tk):
         grid.pack(fill="x", pady=(22, 8))
         for col in range(2):
             grid.grid_columnconfigure(col, weight=1)
-        self.card(grid, "KDE Plasma on Wayland", "Required host environment", column=0, row=0)
-        self.card(grid, "Sunshine", "Offers the host stream", column=1, row=0)
-        self.card(grid, "krfb virtual display", "Creates the second screen", symbol="＋", column=0, row=1)
-        self.card(grid, "Supported graphics", "Used by the host encoder", symbol="▣", column=1, row=1)
+        self.card(grid, "KDE Plasma on Wayland", "Required host environment", column=0, row=0, symbol="PC", status_var=self.requirement_status_vars["host"])
+        self.card(grid, "Sunshine", "Offers the host stream", column=1, row=0, symbol="↔", status_var=self.requirement_status_vars["sunshine"])
+        self.card(grid, "krfb virtual display", "Creates the second screen", column=0, row=1, symbol="▣", status_var=self.requirement_status_vars["display"])
+        self.card(grid, "Supported graphics", "Used by the host encoder", column=1, row=1, symbol="GPU", status_var=self.requirement_status_vars["graphics"])
         status = tk.Frame(page, bg="#1b3044", highlightbackground="#315d80", highlightthickness=1)
         status.pack(fill="x", pady=(20, 0))
-        tk.Label(status, text="ⓘ", bg="#1b3044", fg=self.COLORS["cyan"], font=("TkDefaultFont", 13, "bold")).pack(side="left", padx=14, pady=14)
-        tk.Label(status, textvariable=self.check_status_var, bg="#1b3044", fg="#c0cfdd", font=("TkDefaultFont", 9), justify="left", anchor="w").pack(side="left", pady=14)
+        tk.Label(status, textvariable=self.check_status_var, bg="#1b3044", fg="#c0cfdd", font=("TkDefaultFont", 9), justify="left", anchor="w").pack(anchor="w", padx=16, pady=14)
 
         self.krfb_action = tk.Frame(page, bg=self.COLORS["paper2"], highlightbackground=self.COLORS["line"], highlightthickness=1)
         self.krfb_action_text = tk.StringVar(value="")
@@ -284,16 +293,16 @@ class DualScreenWizard(tk.Tk):
 
     def build_permissions(self):
         page = self.new_page()
-        self.heading(page, "Step 2 · Setup and permissions", "What will change?", "The setup adds the virtual display support, configures Sunshine for KDE capture, and routes Sunshine's virtual touchscreen to that display when it appears.")
+        self.heading(page, "Step 2 · Setup and permissions", "What will change?", "The setup adds the virtual display support, configures Sunshine for KDE capture, and routes Sunshine's virtual touchscreen to that display when it appears. DSU motion monitoring stays local to the host and runs only while the mode is active.")
         grid = tk.Frame(page, bg=self.COLORS["paper"])
         grid.pack(fill="x", pady=(22, 8))
         for col in range(2):
             grid.grid_columnconfigure(col, weight=1)
-        self.card(grid, "Virtual second screen", "Add the KDE component if needed", symbol="＋", column=0, row=0)
-        self.card(grid, "Sunshine capture", "Use KDE’s virtual output and touch routing", symbol="↗", column=1, row=0)
-        self.card(grid, "One user-level permission", "Allows KWin capture for Sunshine", symbol="⌁", column=0, row=1)
-        self.card(grid, "Settings app", "Manage settings, updates, and uninstall", column=1, row=1)
-        self.make_label(page, "The setup keeps things simple. Your existing streaming tools remain available for regular use, and Dual Screen Mode has its own settings app for changes or removal.", size=10, color=self.COLORS["soft"], wrap=680).pack(anchor="w", pady=(25, 0))
+        self.card(grid, "Virtual second screen", "Add the KDE component if needed", column=0, row=0, symbol="▣")
+        self.card(grid, "Sunshine capture", "Use KDE’s virtual output and touch routing", column=1, row=0, symbol="↔")
+        self.card(grid, "One user-level permission", "Allows KWin capture for Sunshine", column=0, row=1, symbol="✓")
+        self.card(grid, "Settings app", "View status, motion, diagnostics, and uninstall", column=1, row=1, symbol="⚙")
+        self.make_label(page, "The setup keeps things simple. Motion monitoring is enabled by default and looks for your Steam Deck automatically on the local network. Settings can show the connection, retry discovery, open separate diagnostics, and disable motion if you prefer.", size=10, color=self.COLORS["soft"], wrap=680).pack(anchor="w", pady=(25, 0))
 
     def build_device(self):
         page = self.new_page()
@@ -314,8 +323,8 @@ class DualScreenWizard(tk.Tk):
         choices = tk.Frame(page, bg=self.COLORS["paper"])
         choices.pack(fill="x", pady=(22, 12))
         self.audio_buttons = {}
-        for key, title, sub in [("host", "Host", "Keep it on the host"), ("handheld", "Handheld", "Stream it and mute host"), ("both", "Both (work in progress)", "Uses Handheld for now")]:
-            button = tk.Button(choices, text=f"▣\n{title}\n{sub}", command=lambda value=key: self.select_audio(value), bg=self.COLORS["paper2"], fg=self.COLORS["ink"], activebackground="#24435e", activeforeground="#ffffff", relief="flat", bd=0, padx=18, pady=16, font=("TkDefaultFont", 11, "bold"), justify="left", anchor="w")
+        for key, title, sub, symbol in [("host", "Host", "Keep it on the host", "PC"), ("handheld", "Handheld", "Stream it and mute host", "▸"), ("both", "Both (work in progress)", "Uses Handheld for now", "↔")]:
+            button = tk.Button(choices, text=f"{symbol}  {title}\n    {sub}", command=lambda value=key: self.select_audio(value), bg=self.COLORS["paper2"], fg=self.COLORS["ink"], activebackground="#24435e", activeforeground="#ffffff", relief="flat", bd=0, padx=18, pady=16, font=("TkDefaultFont", 11, "bold"), justify="left", anchor="w")
             button.pack(side="left", fill="both", expand=True, padx=5)
             self.audio_buttons[key] = button
         details = tk.Frame(page, bg=self.COLORS["paper2"], highlightbackground=self.COLORS["line"], highlightthickness=1)
@@ -371,16 +380,16 @@ class DualScreenWizard(tk.Tk):
 
     def build_complete(self):
         page = self.new_page()
-        self.heading(page, "Step 7 · Complete", "Setup complete. Give it a try!", "Double-click Dual Screen Mode to create the wireless virtual display. Moonlight is installed separately on the handheld and pairs with Sunshine manually.")
+        self.heading(page, "Step 7 · Complete", "Setup complete. Give it a try!", "Double-click Dual Screen Mode to create the wireless virtual display. It starts centered below the main display, refreshes Sunshine so the virtual output is loaded, and ignores rapid duplicate clicks during transitions. Moonlight is installed separately on the handheld and pairs with Sunshine manually. Motion monitoring is enabled by default and automatically looks for the Deck when the mode starts.")
         card = tk.Frame(page, bg=self.COLORS["paper2"], highlightbackground=self.COLORS["line"], highlightthickness=1)
         card.pack(fill="x", pady=(26, 8))
         tk.Label(card, text="✓", bg=self.COLORS["paper2"], fg=self.COLORS["good"], font=("TkDefaultFont", 32, "bold")).pack(side="right", padx=28, pady=27)
         text = tk.Frame(card, bg=self.COLORS["paper2"])
         text.pack(side="left", fill="both", expand=True, padx=20, pady=20)
         tk.Label(text, text="Your Dual Screen Mode shortcuts are ready.", bg=self.COLORS["paper2"], fg=self.COLORS["blue_bright"], font=("TkDefaultFont", 10, "bold"), anchor="w").pack(anchor="w")
-        tk.Label(text, text="Dual Screen Mode turns the virtual display on or off. Dual Screen Mode Settings lets you change options or remove the project.", bg=self.COLORS["paper2"], fg=self.COLORS["soft"], font=("TkDefaultFont", 9), wraplength=510, justify="left", anchor="w").pack(anchor="w", pady=(7, 0))
+        tk.Label(text, text="Dual Screen Mode enables or disables the virtual display. Dual Screen Mode Settings lets you change options or remove the project.", bg=self.COLORS["paper2"], fg=self.COLORS["soft"], font=("TkDefaultFont", 9), wraplength=510, justify="left", anchor="w").pack(anchor="w", pady=(7, 0))
         tk.Label(page, textvariable=self.test_result_var, bg=self.COLORS["paper"], fg=self.COLORS["good"], font=("TkDefaultFont", 9), justify="left", anchor="w", wraplength=680).pack(anchor="w", pady=(22, 0))
-        self.make_label(page, "Open Moonlight on the handheld, choose the already-paired host, and follow its normal Sunshine pairing flow if needed. If KDE needs a refresh for the new capture permission, log out and back in or restart the host computer.", size=10, color=self.COLORS["soft"], wrap=680).pack(anchor="w", pady=(22, 0))
+        self.make_label(page, "Open Moonlight on the handheld, choose the already-paired host, and follow its normal Sunshine pairing flow if needed. DSM refreshes Sunshine when the mode starts so it loads the virtual display. Motion is enabled by default and looks for your Steam Deck automatically. Settings can show the DSU status, retry discovery, or open the separate motion diagnostics and temporary calibration view. If Cemu is found, keep Cemu closed while DSM prepares the Deck Gyro profile and saved DSU address. Wait for DSM's profile-ready notification, then open Cemu Input settings and select Dual Screen Mode Deck Gyro. No manual IP or Add input API step is needed. DSM does not install emulators. If KDE needs a refresh for the new capture permission, log out and back in or restart the host computer.", size=10, color=self.COLORS["soft"], wrap=680).pack(anchor="w", pady=(22, 0))
 
     def resolution_changed(self, _event=None):
         if self.resolution_var.get() == "Custom":
@@ -495,7 +504,27 @@ class DualScreenWizard(tk.Tk):
     def check_krfb(self):
         self.check_started = False
         self.check_status_var.set("Checking for krfb-virtualmonitor...")
+        for status in self.requirement_status_vars.values():
+            status.set("Checking")
         self.run_host_check()
+
+    def update_requirement_statuses(self, output, returncode):
+        lower = output.lower()
+        host_ready = returncode == 0 and "desktop session:" in lower
+        self.requirement_status_vars["host"].set("✓ Ready" if host_ready else "Review")
+        self.requirement_status_vars["graphics"].set("✓ Ready" if returncode == 0 else "Review")
+        if "krfb-virtualmonitor is missing" in lower:
+            self.requirement_status_vars["display"].set("Needs install")
+        elif "krfb-virtualmonitor is ready" in lower:
+            self.requirement_status_vars["display"].set("✓ Ready")
+        else:
+            self.requirement_status_vars["display"].set("Review")
+        if "sunshine is missing" in lower or "sunshine is unavailable" in lower:
+            self.requirement_status_vars["sunshine"].set("Will install")
+        elif "sunshine is ready" in lower:
+            self.requirement_status_vars["sunshine"].set("✓ Ready")
+        else:
+            self.requirement_status_vars["sunshine"].set("Review")
 
     def open_krfb_terminal(self):
         if not shutil.which("konsole"):
@@ -605,6 +634,7 @@ exit "$status"
                 event = self.events.get_nowait()
                 if event[0] == "check":
                     output = event[2]
+                    self.update_requirement_statuses(output, event[1])
                     self.krfb_missing = "krfb-virtualmonitor is missing" in output
                     if self.krfb_missing:
                         self.check_status_var.set("The virtual-display package is missing. Follow the instructions below before continuing.")
@@ -652,6 +682,7 @@ exit "$status"
             self.test_result_var.set("Dual Screen Mode is already active, so the test left it alone.")
             return
         self.test_button.configure(state="disabled")
+        self.test_running = True
         self.test_result_var.set("Running the safe connection test...")
 
         def worker():
@@ -676,10 +707,12 @@ exit "$status"
             while True:
                 event = self.events.get_nowait()
                 if event[0] == "test":
+                    self.test_running = False
                     self.test_result_var.set(event[1])
                     self.test_button.configure(state="normal")
         except queue.Empty:
-            self.after(100, self.poll_test_events)
+            if self.test_running:
+                self.after(100, self.poll_test_events)
 
     def close_window(self):
         if self.install_started and not self.install_failed and self.page_index == 6:
@@ -704,3 +737,4 @@ exit "$status"
 
 if __name__ == "__main__":
     DualScreenWizard().mainloop()
+

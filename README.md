@@ -12,7 +12,7 @@ It creates a virtual display on the host PC, prepares Sunshine to stream that di
 
 It can be used for emulation, but it is not limited to emulation. You can also use the handheld as an extra wireless display for regular desktop or gaming use.
 
-This is an early beta made for SteamOS and KDE Plasma on Wayland.
+This is beta release **0.1.5-beta** for SteamOS and KDE Plasma on Wayland.
 
 ## What's new
 
@@ -24,7 +24,7 @@ This update documents the current beta and the parts that are ready to use:
 
 ## Changelog
 
-### Current beta
+### 0.1.5-beta
 
 - Added live status updates for the virtual display, Sunshine, touch routing, and DSU motion.
 - Added automatic Deck discovery with a settling window before local-network fallback.

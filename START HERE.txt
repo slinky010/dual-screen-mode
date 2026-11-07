@@ -1,25 +1,62 @@
 DUAL SCREEN MODE
-Beta release 0.1.4
 
-START HERE
+Quick start
 
-1. Extract this archive.
-2. Open the extracted Dual Screen Mode folder.
-3. Double-click Install Dual Screen Mode.desktop.
-4. Choose Launch if KDE asks what to do with the file.
-5. Click Begin setup in the wizard.
+1. Double-click "Install Dual Screen Mode.desktop".
+2. Choose Launch if KDE asks what to do.
+3. Click Begin setup.
+4. Follow the wizard.
+5. When it finishes, use the new "Dual Screen Mode" shortcut.
+6. Connect to the host with Moonlight.
 
-You only need to launch the installer once. The wizard will check your system and explain anything that needs attention.
+The Dual Screen Mode shortcut accepts one action at a time. Rapid duplicate
+clicks are ignored while the mode is starting or disabling.
 
-After setup, two shortcuts will be created in your configured Desktop folder:
+The virtual display starts centered below the main display. You can move it later
+in KDE's Display Configuration if you want a different arrangement.
 
-- Dual Screen Mode turns the virtual display on or off.
-- Dual Screen Mode Settings shows status, settings, help, updates, and uninstall options.
+When the mode starts, DSM refreshes Sunshine so it loads the virtual display
+instead of a previously selected physical display. If Sunshine was already
+streaming, reconnect Moonlight after DSM says it is ready.
 
-Moonlight is installed separately on the handheld. Pair it with Sunshine through the normal Moonlight and Sunshine pairing process. After that, turn on Dual Screen Mode on the host and connect with Moonlight.
+When the mode is disabled, DSM restores the Sunshine display settings it
+changed and returns a Sunshine session that was already running before startup.
 
-The other files are included for documentation, source code, and development. You do not need to open the .sh or .py files for a normal installation.
+If the wizard opens Konsole, enter your normal administrator password there.
+Close Konsole when the package installation finishes, then click Check again.
 
-If the desktop installer does not launch, open a terminal in this folder and run:
+Motion
 
-    ./launch-wizard.sh
+Motion monitoring is enabled by default. Dual Screen Mode automatically looks
+for the Steam Deck on the local network when its address is not saved. Settings
+does the same thing when it opens. You can use Find Deck or enter the address
+manually if automatic discovery cannot find it.
+
+Open "Dual Screen Mode Settings" to see live motion, touch, Sunshine, and
+virtual-display status. The separate DSU Motion Probe is an optional diagnostic
+tool that shows the Deck connection, controller and gyro capability, packet
+health, and live accelerometer and gyroscope readings. Its Calibrate button
+only recenters that window's temporary gravity view.
+
+Motion status is specific to the DSU path: Connected means DSM is receiving
+motion packets from the Deck. It does not mean Moonlight or an emulator is
+currently using the data.
+
+Moonlight is installed and paired separately on the handheld. Dual Screen Mode
+does not install emulators. When Cemu is found, DSM can prepare its
+"Dual Screen Mode Deck Gyro" profile with a DSMController DSU entry, updates
+Cemu to use the discovered Deck IP on port 26760, and preserves the existing
+controls. Wait for DSM's Deck Gyro profile-ready notification before opening
+Cemu. Then open Cemu's Input settings and select "Dual Screen Mode Deck Gyro".
+No manual IP entry or Add input API step is needed.
+Azahar and melonDS keep their own profiles.
+Microphone forwarding is not included.
+
+Cemu quick setup
+
+1. Close Cemu before starting Dual Screen Mode the first time.
+2. Start Dual Screen Mode and wait for the Deck Gyro profile-ready notification.
+3. Only then open Cemu's Input settings and select "Dual Screen Mode Deck Gyro".
+
+That is the only Cemu-specific setup step. DSM prepares the DSU address and
+preserves the existing controls for you.

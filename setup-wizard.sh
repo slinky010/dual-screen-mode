@@ -36,6 +36,11 @@ UNINSTALL_APP_DIR="$HOME/.local/share/dual-screen-mode"
 UNINSTALL_SCRIPT_DEST="$UNINSTALL_APP_DIR/uninstall.sh"
 MANAGEMENT_SCRIPT_DEST="$UNINSTALL_APP_DIR/settings-gui.py"
 MANAGEMENT_LAUNCHER_DEST="$UNINSTALL_APP_DIR/settings-launcher.sh"
+MOTION_MONITOR_DEST="$UNINSTALL_APP_DIR/motion_monitor.py"
+MOTION_DISCOVERY_DEST="$UNINSTALL_APP_DIR/motion_discovery.py"
+DISPLAY_LAYOUT_DEST="$UNINSTALL_APP_DIR/display_layout.py"
+CEMU_PROFILE_DEST="$UNINSTALL_APP_DIR/cemu_profile.py"
+MOTION_PROBE_DIR_DEST="$UNINSTALL_APP_DIR/motion_probe"
 ICON_DEST="$HOME/.local/share/icons/dual-screen-mode.png"
 SETTINGS_ICON_DEST="$HOME/.local/share/icons/dual-screen-mode-settings.png"
 BUNDLED_ICON="$PROJECT_DIR/assets/dual-screen-mode.png"
@@ -47,6 +52,7 @@ RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}/dual-screen-mode"
 BACKUP_DIR="$STATE_DIR/backups/$(date +%Y%m%d-%H%M%S)"
 OWNED_ENV_MARKER="$STATE_DIR/owned-environment-setting"
 OWNED_OVERRIDE_MARKER="$STATE_DIR/owned-sunshine-override"
+OWNED_SUNSHINE_CONFIG_MARKER="$STATE_DIR/owned-sunshine-config"
 OWNED_SETTINGS_ICON_MARKER="$STATE_DIR/owned-settings-icon"
 
 DRY_RUN=0
@@ -63,6 +69,7 @@ PROGRESS_REF=""
 QDBUS_CMD=""
 RESOLUTION="1280x800"
 AUDIO_MODE="host"
+ORIGINAL_ARGC=$#
 
 usage() {
     cat <<'EOF'
@@ -152,6 +159,14 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Launch the full graphical wizard when this script is opened directly. The
+# wizard itself calls this script with --execute for the reviewed install.
+if [[ "$ORIGINAL_ARGC" -eq 0 && -f "$PROJECT_DIR/wizard-gui.py" ]] &&
+    command -v python3 >/dev/null 2>&1 &&
+    python3 -c 'import tkinter' >/dev/null 2>&1; then
+    exec python3 "$PROJECT_DIR/wizard-gui.py"
+fi
 
 have() {
     command -v "$1" >/dev/null 2>&1
@@ -269,10 +284,9 @@ find_qdbus() {
 
 progress_open() {
     PROGRESS_REF=""
-    if (( NO_PROGRESS_UI )) || ! have kdialog || ! find_qdbus; then
-        return 0
-    fi
-    PROGRESS_REF="$(kdialog --title "Dual Screen Mode" --progressbar "Setting up Dual Screen Mode" 8 2>/dev/null || true)"
+    # The graphical wizard owns the progress screen. Keeping this shell
+    # fallback text-only prevents a second empty KDialog from being left open.
+    return 0
 }
 
 progress_step() {
@@ -317,11 +331,12 @@ Changes it may make:
   - Update Sunshine's local capture/output settings.
   - Install a toggle that maps Sunshine's virtual touchscreen to the virtual display through KWin while the mode is active, then restores the previous mapping when it is turned off.
   - Save a selected display size and audio preference in a user config file.
+  - Enable a small DSU motion-health connection by default while the mode is active. If the Deck address is missing, Dual Screen Mode and Settings check only the local network and save a discovered address; Find Deck and manual entry remain available as fallbacks.
   - Audio is explicit: Host sets Sunshine audio streaming off and leaves host outputs alone. Handheld sets it on and mutes the current default output. Both is work in progress and currently uses the Handheld behavior. Before this, Dual Screen Mode saves Sunshine's current audio-stream setting and, when available, the current default output's volume and mute state. Those saved values are restored when the mode turns off.
-  - Create a user-local on/off launcher and management app plus matching launcher icons.
+  - Create a user-local enable/disable launcher and management app plus matching launcher icons.
 
 What it does not do:
-  - No telemetry, analytics, ads, bundled software, or background daemon.
+  - No telemetry, analytics, ads, bundled software, or always-on background daemon. The motion monitor runs only while Dual Screen Mode is active and can be turned off in Settings.
   - No curl|bash, remote shell script, or arbitrary third-party download.
   - No automatic removal of Sunshine, Moonlight, or krfb.
   - No access to personal files beyond the selected icon and known config paths.
@@ -425,7 +440,7 @@ permissions_step() {
     fi
 
     ui_question \
-        "Setup and permissions\n\nDual Screen Mode may install KDE's krfb virtual-display component and Sunshine if they are missing. It also adds a user-level KWin setting so Sunshine can capture the virtual display. When the mode is active, its toggle maps Sunshine's virtual touchscreen to that display when KWin exposes it.\n\nThere is no background service or telemetry. Sunshine, Moonlight, krfb, and your backups stay under your control.\n\nContinue?" ||
+        "Setup and permissions\n\nDual Screen Mode may install KDE's krfb virtual-display component and Sunshine if they are missing. It also adds a user-level KWin setting so Sunshine can capture the virtual display. When the mode is active, its toggle maps Sunshine's virtual touchscreen to that display when KWin exposes it.\n\nThere is no always-on service or telemetry. Motion monitoring is enabled by default after setup, runs only while Dual Screen Mode is active, and automatically checks the local network for the Deck when its address is missing. You can turn it off in Settings. Sunshine, Moonlight, krfb, and your backups stay under your control.\n\nContinue?" ||
         exit 0
     PERMISSIONS_APPROVED=1
 }
@@ -551,6 +566,9 @@ configure_sunshine() {
         return 0
     fi
 
+    local original_capture original_output
+    original_capture="$(grep -m1 -E "^[[:space:]]*capture[[:space:]]*=" "$SUNSHINE_CONF" 2>/dev/null || true)"
+    original_output="$(grep -m1 -E "^[[:space:]]*output_name[[:space:]]*=" "$SUNSHINE_CONF" 2>/dev/null || true)"
     backup_file "$SUNSHINE_CONF"
     if (( DRY_RUN )); then
         note "Would configure Sunshine for KWin capture and Virtual-${VIRTUAL_NAME}."
@@ -563,6 +581,10 @@ configure_sunshine() {
         fail "Could not create Sunshine's configuration file."
     set_config_key "$SUNSHINE_CONF" capture kwin
     set_config_key "$SUNSHINE_CONF" output_name "Virtual-${VIRTUAL_NAME}"
+    mkdir -p "$STATE_DIR"
+    printf '%s\n' \
+        "capture_line=${original_capture:-__MISSING__}" \
+        "output_name_line=${original_output:-__MISSING__}" > "$OWNED_SUNSHINE_CONFIG_MARKER"
 }
 
 choose_resolution() {
@@ -629,11 +651,33 @@ save_settings() {
         fi
         backup_file "$SETTINGS_FILE"
     fi
+    local existing_motion_enabled="1"
+    local existing_motion_host=""
+    local existing_motion_port="26760"
+    local existing_motion_slot="0"
+    if [[ -f "$SETTINGS_FILE" ]]; then
+        existing_motion_enabled="$(awk -F= '$1 == "motion_enabled" { print substr($0, index($0, "=") + 1); exit }' "$SETTINGS_FILE")"
+        existing_motion_host="$(awk -F= '$1 == "motion_host" { print substr($0, index($0, "=") + 1); exit }' "$SETTINGS_FILE")"
+        existing_motion_port="$(awk -F= '$1 == "motion_port" { print substr($0, index($0, "=") + 1); exit }' "$SETTINGS_FILE")"
+        existing_motion_slot="$(awk -F= '$1 == "motion_slot" { print substr($0, index($0, "=") + 1); exit }' "$SETTINGS_FILE")"
+    fi
+    [[ "$existing_motion_enabled" == "0" || "$existing_motion_enabled" == "1" ]] || existing_motion_enabled="1"
+    if [[ "$existing_motion_enabled" == "0" && ! -e "$STATE_DIR/motion-choice" ]]; then
+        # Older drafts defaulted motion off. Treat that unmarked value as the
+        # old default; a value saved by the user is marked and preserved.
+        existing_motion_enabled="1"
+    fi
+    [[ "$existing_motion_port" =~ ^[0-9]+$ && "$existing_motion_port" -ge 1 && "$existing_motion_port" -le 65535 ]] || existing_motion_port="26760"
+    [[ "$existing_motion_slot" =~ ^[0-3]$ ]] || existing_motion_slot="0"
     mkdir -p "$SETTINGS_DIR" "$STATE_DIR"
     printf '%s\n' \
         '# Managed by Dual Screen Mode' \
         "resolution=$RESOLUTION" \
-        "audio_mode=$AUDIO_MODE" > "$SETTINGS_FILE"
+        "audio_mode=$AUDIO_MODE" \
+        "motion_enabled=$existing_motion_enabled" \
+        "motion_host=$existing_motion_host" \
+        "motion_port=$existing_motion_port" \
+        "motion_slot=$existing_motion_slot" > "$SETTINGS_FILE"
     touch "$STATE_DIR/owned-settings"
 }
 
@@ -728,6 +772,12 @@ install_uninstaller() {
 
     backup_file "$UNINSTALL_DESKTOP_DEST"
     backup_file "$UNINSTALL_SCRIPT_DEST"
+    backup_file "$MOTION_MONITOR_DEST"
+    backup_file "$MOTION_DISCOVERY_DEST"
+    backup_file "$DISPLAY_LAYOUT_DEST"
+    backup_file "$CEMU_PROFILE_DEST"
+    backup_file "$MOTION_PROBE_DIR_DEST/dsu_motion_probe.py"
+    backup_file "$MOTION_PROBE_DIR_DEST/__init__.py"
     if (( DRY_RUN )); then
         note "Would create the graphical uninstall launcher at $UNINSTALL_DESKTOP_DEST"
         return 0
@@ -740,6 +790,19 @@ install_uninstaller() {
         fail "Could not install the Dual Screen Mode settings app."
     install -m 755 "$PROJECT_DIR/settings-launcher.sh" "$MANAGEMENT_LAUNCHER_DEST" ||
         fail "Could not install the Dual Screen Mode settings launcher."
+    install -m 755 "$PROJECT_DIR/motion_monitor.py" "$MOTION_MONITOR_DEST" ||
+        fail "Could not install the motion connection monitor."
+    install -m 755 "$PROJECT_DIR/motion_discovery.py" "$MOTION_DISCOVERY_DEST" ||
+        fail "Could not install the motion discovery helper."
+    install -m 755 "$PROJECT_DIR/display_layout.py" "$DISPLAY_LAYOUT_DEST" ||
+        fail "Could not install the display layout helper."
+    install -m 755 "$PROJECT_DIR/cemu_profile.py" "$CEMU_PROFILE_DEST" ||
+        fail "Could not install the Cemu profile helper."
+    mkdir -p "$MOTION_PROBE_DIR_DEST"
+    install -m 755 "$PROJECT_DIR/motion_probe/dsu_motion_probe.py" "$MOTION_PROBE_DIR_DEST/dsu_motion_probe.py" ||
+        fail "Could not install the motion diagnostics tool."
+    install -m 644 "$PROJECT_DIR/motion_probe/__init__.py" "$MOTION_PROBE_DIR_DEST/__init__.py" ||
+        fail "Could not install the motion diagnostics package."
 
     local settings_icon_value="video-display"
     if [[ -f "$BUNDLED_SETTINGS_ICON" ]]; then
@@ -846,7 +909,7 @@ main() {
     elif (( GUI_EXECUTE )); then
         ui_message "Setup complete."
     else
-        ui_message "Setup complete. Give it a try!\n\nDouble-click Dual Screen Mode to create the virtual display. Moonlight is installed separately on the handheld, and Sunshine pairing is completed manually through the normal Moonlight and Sunshine flow. If KDE does not see the new capture permission right away, log out and back in or restart the host computer.\n\nOpen Dual Screen Mode Settings whenever you want to change options or remove the project.\n\nMade by slinky."
+        ui_message "Setup complete. Give it a try!\n\nDouble-click Dual Screen Mode to create the virtual display. It starts centered below the main display, refreshes Sunshine so the virtual output is loaded, and ignores rapid duplicate clicks while it is starting or disabling. Moonlight is installed separately on the handheld, and Sunshine pairing is completed manually through the normal Moonlight and Sunshine flow. Motion monitoring is enabled by default and looks for the Deck automatically when the mode starts. Open Dual Screen Mode Settings to view the live DSU, touch, Sunshine, and display status, retry discovery, open separate motion diagnostics, change options, or remove the project. If Cemu is found, keep it closed while DSM prepares its Dual Screen Mode Deck Gyro profile, updates Cemu's saved DSU address, and preserves existing controls. Wait for DSM's profile-ready notification before opening Cemu, then select Dual Screen Mode Deck Gyro in Cemu Input settings; no manual IP or Add input API step is needed. DSM does not install emulators. The diagnostic Calibrate button only changes that window's temporary visual reference. If KDE does not see the new capture permission right away, log out and back in or restart the host computer.\n\nMade by slinky."
         if ui_question "Run a safe connection test now? It will turn the virtual display on, wait briefly, and turn it back off."; then
             run_connection_test
         fi
