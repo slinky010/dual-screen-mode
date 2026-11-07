@@ -136,14 +136,14 @@ grep -Fxq 'DP-1' "$fake_state/touch-output" || { echo 'FAIL touch output mapping
 
 # The production toggle intentionally ignores a second click for 1.2 seconds
 # after shutdown, so wait for that safety window before starting the next mode.
-sleep 1.3
+sleep 2.0
 printf '%s\n' 'resolution=1280x800' 'audio_mode=handheld' > "$test_home/.config/dual-screen-mode/settings.conf"
 run_toggle
 assert_mute_state yes 'handheld mode did not mute host audio'
 run_toggle
 assert_mute_state no 'handheld mode did not restore host mute state'
 
-sleep 1.3
+sleep 2.0
 printf '%s\n' 'resolution=1280x800' 'audio_mode=both' > "$test_home/.config/dual-screen-mode/settings.conf"
 run_toggle
 assert_mute_state yes 'both mode did not use handheld audio behavior'
