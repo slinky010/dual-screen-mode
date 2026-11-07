@@ -11,8 +11,11 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Run project tests
-        run: |
-          bash tests/test-syntax.sh
-          bash tests/test-toggle.sh
-          bash tests/test-setup-execute.sh
+      - name: Syntax and content checks
+        run: bash tests/test-syntax.sh
+
+      - name: Toggle lifecycle and audio checks
+        run: bash tests/test-toggle.sh
+
+      - name: Setup and uninstall checks
+        run: bash tests/test-setup-execute.sh
