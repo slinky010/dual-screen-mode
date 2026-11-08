@@ -37,6 +37,7 @@ MOTION_DISCOVERY_DEST="$UNINSTALL_APP_DIR/motion_discovery.py"
 DISPLAY_LAYOUT_DEST="$UNINSTALL_APP_DIR/display_layout.py"
 CEMU_PROFILE_DEST="$UNINSTALL_APP_DIR/cemu_profile.py"
 UPDATE_SUPPORT_DEST="$UNINSTALL_APP_DIR/update_support.py"
+VERSION_DEST="$UNINSTALL_APP_DIR/VERSION"
 MOTION_PROBE_DIR_DEST="$UNINSTALL_APP_DIR/motion_probe"
 ICON_DEST="$HOME/.local/share/icons/dual-screen-mode.png"
 SETTINGS_ICON_DEST="$HOME/.local/share/icons/dual-screen-mode-settings.png"
@@ -62,6 +63,7 @@ OWNED_ENV_MARKER="$STATE_DIR/owned-environment-setting"
 OWNED_OVERRIDE_MARKER="$STATE_DIR/owned-sunshine-override"
 OWNED_SUNSHINE_CONFIG_MARKER="$STATE_DIR/owned-sunshine-config"
 OWNED_SETTINGS_ICON_MARKER="$STATE_DIR/owned-settings-icon"
+OWNED_VERSION_MARKER="$STATE_DIR/owned-version"
 
 DRY_RUN=0
 AUTO_CONFIRM=0
@@ -399,7 +401,8 @@ if [[ -f "$STATE_DIR/owned-uninstaller" ]]; then
     rmdir "$UNINSTALL_APP_DIR" 2>/dev/null || true
 fi
 if [[ -f "$STATE_DIR/owned-management-app" ]]; then
-    rm -f "$MANAGEMENT_SCRIPT_DEST" "$MOTION_MONITOR_DEST" "$MOTION_DISCOVERY_DEST" "$DISPLAY_LAYOUT_DEST" "$CEMU_PROFILE_DEST" "$UPDATE_SUPPORT_DEST" "$MOTION_PROBE_DIR_DEST/dsu_motion_probe.py" "$MOTION_PROBE_DIR_DEST/__init__.py"
+    rm -f "$MANAGEMENT_SCRIPT_DEST" "$MOTION_MONITOR_DEST" "$MOTION_DISCOVERY_DEST" "$DISPLAY_LAYOUT_DEST" "$CEMU_PROFILE_DEST" "$UPDATE_SUPPORT_DEST" "$VERSION_DEST" "$MOTION_PROBE_DIR_DEST/dsu_motion_probe.py" "$MOTION_PROBE_DIR_DEST/__init__.py"
+    rm -f "$OWNED_VERSION_MARKER"
     rmdir "$MOTION_PROBE_DIR_DEST" 2>/dev/null || true
     rm -f "$STATE_DIR/owned-management-app"
     rmdir "$UNINSTALL_APP_DIR" 2>/dev/null || true

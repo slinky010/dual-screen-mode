@@ -69,6 +69,7 @@ grep -Fxq 'output_name = Virtual-DualScreen' "$test_home/.var/app/dev.lizardbyte
 [[ -x "$test_home/.local/share/dual-screen-mode/display_layout.py" ]]
 [[ -x "$test_home/.local/share/dual-screen-mode/cemu_profile.py" ]]
 [[ -f "$test_home/.local/share/dual-screen-mode/update_support.py" ]]
+[[ "$(cat "$test_home/.local/share/dual-screen-mode/VERSION")" == "0.1.6-beta" ]]
 [[ -f "$test_home/.local/share/icons/dual-screen-mode-settings.png" ]]
 grep -Fq 'settings-gui.py' "$desktop_dir/Uninstall Dual Screen Mode.desktop"
 grep -Fq 'settings-launcher.sh' "$desktop_dir/Uninstall Dual Screen Mode.desktop"

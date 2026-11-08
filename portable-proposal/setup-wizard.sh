@@ -41,6 +41,7 @@ MOTION_DISCOVERY_DEST="$UNINSTALL_APP_DIR/motion_discovery.py"
 DISPLAY_LAYOUT_DEST="$UNINSTALL_APP_DIR/display_layout.py"
 CEMU_PROFILE_DEST="$UNINSTALL_APP_DIR/cemu_profile.py"
 UPDATE_SUPPORT_DEST="$UNINSTALL_APP_DIR/update_support.py"
+VERSION_DEST="$UNINSTALL_APP_DIR/VERSION"
 MOTION_PROBE_DIR_DEST="$UNINSTALL_APP_DIR/motion_probe"
 ICON_DEST="$HOME/.local/share/icons/dual-screen-mode.png"
 SETTINGS_ICON_DEST="$HOME/.local/share/icons/dual-screen-mode-settings.png"
@@ -55,6 +56,7 @@ OWNED_ENV_MARKER="$STATE_DIR/owned-environment-setting"
 OWNED_OVERRIDE_MARKER="$STATE_DIR/owned-sunshine-override"
 OWNED_SUNSHINE_CONFIG_MARKER="$STATE_DIR/owned-sunshine-config"
 OWNED_SETTINGS_ICON_MARKER="$STATE_DIR/owned-settings-icon"
+OWNED_VERSION_MARKER="$STATE_DIR/owned-version"
 
 DRY_RUN=0
 AUDIT=0
@@ -778,6 +780,7 @@ install_uninstaller() {
     backup_file "$DISPLAY_LAYOUT_DEST"
     backup_file "$CEMU_PROFILE_DEST"
     backup_file "$UPDATE_SUPPORT_DEST"
+    backup_file "$VERSION_DEST"
     backup_file "$MOTION_PROBE_DIR_DEST/dsu_motion_probe.py"
     backup_file "$MOTION_PROBE_DIR_DEST/__init__.py"
     if (( DRY_RUN )); then
@@ -802,6 +805,9 @@ install_uninstaller() {
         fail "Could not install the Cemu profile helper."
     install -m 644 "$PROJECT_DIR/update_support.py" "$UPDATE_SUPPORT_DEST" ||
         fail "Could not install the update helper."
+    install -m 644 "$PROJECT_DIR/VERSION" "$VERSION_DEST" ||
+        fail "Could not install the installed-version file."
+    touch "$OWNED_VERSION_MARKER"
     mkdir -p "$MOTION_PROBE_DIR_DEST"
     install -m 755 "$PROJECT_DIR/motion_probe/dsu_motion_probe.py" "$MOTION_PROBE_DIR_DEST/dsu_motion_probe.py" ||
         fail "Could not install the motion diagnostics tool."

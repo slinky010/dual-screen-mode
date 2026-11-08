@@ -19,7 +19,18 @@ import update_support
 os.umask(0o077)
 
 
-APP_VERSION = "0.1.5-beta"
+VERSION_FILE = Path(__file__).resolve().parent / "VERSION"
+
+
+def installed_version():
+    try:
+        version = VERSION_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        version = ""
+    return version or "0.1.5-beta"
+
+
+APP_VERSION = installed_version()
 VIRTUAL_NAME = "DualScreen"
 SUNSHINE_APP = "dev.lizardbyte.app.Sunshine"
 SETTINGS_FILE = Path.home() / ".config" / "dual-screen-mode" / "settings.conf"
